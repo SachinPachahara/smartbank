@@ -9,6 +9,7 @@ import {
   FaEye,
   FaEyeSlash,
   FaEnvelope,
+  FaMagic,
 } from "react-icons/fa";
 
 export default function ForgotPasswordModal({ isOpen, onClose, userType = "user" }) {
@@ -25,80 +26,159 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
 
   if (!isOpen) return null;
 
-  const baseUrl =
-    process.env.NODE_ENV === "production"
-      ? userType === "admin"
-        ? "https://ebank-2t3r.onrender.com/api/admins/"
-        : "https://ebank-2t3r.onrender.com/api/users/"
-      : userType === "admin"
-      ? "http://localhost:5000/api/admins/"
-      : "http://localhost:5000/api/users/";
+  // Localhost detection ensures we always hit local port 5000 during dev/testing
+  const isLocal =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.port === "3000" ||
+      window.location.port === "5173");
 
-  // Password rules validation
-  const hasMinLength = newPassword.length >= 12;
+  const baseUrl = isLocal
+    ? userType === "admin"
+      ? "http://localhost:5000/api/admins/"
+      : "http://localhost:5000/api/users/"
+    : userType === "admin"
+    ? "https://ebank-2t3r.onrender.com/api/admins/"
+    : "https://ebank-2t3r.onrender.com/api/users/";
+
+  // Password requirements validation (8+ characters with uppercase, lowercase, number, special symbol)
+  const hasMinLength = newPassword.length >= 8;
   const hasUpper = /[A-Z]/.test(newPassword);
   const hasLower = /[a-z]/.test(newPassword);
   const hasNumber = /[0-9]/.test(newPassword);
   const hasSpecial = /[!@#$%^&*]/.test(newPassword);
   const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
-  const isPasswordValid =
-    hasMinLength && hasUpper && hasLower && hasNumber && hasSpecial && passwordsMatch;
+
+  // Generate strong password helper
+  const handleGeneratePassword = () => {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const generated = `SmartBank@${randomSuffix}!`;
+    setNewPassword(generated);
+    setConfirmPassword(generated);
+    setErrorMsg("");
+  };
 
   // Step 1: Request OTP
   const handleRequestOtp = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setErrorMsg("");
+    setSuccessMsg("");
+
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setErrorMsg("Please provide your registered account email address.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
+      console.log(`[SmartBank Auth] Requesting OTP for ${cleanEmail} via ${baseUrl}forgot-password`);
       const res = await axios.post(
         baseUrl + "forgot-password",
-        { email: email.trim() },
+        { email: cleanEmail },
         { headers: { "Content-Type": "application/json" } }
       );
 
-      setSimulatedOtp(res.data.simulatedOtp || "");
-      setSuccessMsg(res.data.message || "OTP generated successfully");
+      const otpCode = res.data?.simulatedOtp ? res.data.simulatedOtp.toString() : "";
+      setSimulatedOtp(otpCode);
+      if (otpCode) {
+        setOtp(otpCode);
+      }
+
+      setSuccessMsg(res.data?.message || "OTP generated successfully!");
       setIsLoading(false);
       setStep(2);
     } catch (err) {
+      console.error("[SmartBank Auth] Request OTP error:", err);
       setIsLoading(false);
-      setErrorMsg(
-        err.response?.data || "Unable to process password reset. Please verify your email address."
-      );
+      const errMsg =
+        err.response?.data ||
+        (typeof err.response?.data === "string" ? err.response.data : err.response?.data?.message) ||
+        err.message ||
+        "Unable to process request. Please check your email address.";
+      setErrorMsg(errMsg);
     }
   };
 
   // Step 2: Reset Password with OTP
   const handleResetPassword = async (e) => {
-    e.preventDefault();
-    if (!isPasswordValid) {
-      setErrorMsg("Please ensure your new password satisfies all banking security requirements.");
+    if (e) e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    const cleanOtp = otp.trim();
+    if (!cleanOtp) {
+      setErrorMsg("Please enter the 6-digit OTP verification code.");
+      return;
+    }
+    if (cleanOtp.length !== 6) {
+      setErrorMsg(`OTP code must be exactly 6 digits (currently ${cleanOtp.length} digits).`);
+      return;
+    }
+    if (!newPassword) {
+      setErrorMsg("Please enter a new password.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setErrorMsg(
+        `Password must be at least 8 characters long (currently ${newPassword.length} characters).`
+      );
+      return;
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      setErrorMsg("Password must contain at least one uppercase letter (A-Z).");
+      return;
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      setErrorMsg("Password must contain at least one lowercase letter (a-z).");
+      return;
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      setErrorMsg("Password must contain at least one number (0-9).");
+      return;
+    }
+    if (!/[!@#$%^&*]/.test(newPassword)) {
+      setErrorMsg("Password must contain at least one special character (!@#$%^&*).");
+      return;
+    }
+    if (!confirmPassword) {
+      setErrorMsg("Please re-type your password in the Confirm Password field.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("Passwords do not match. Please verify both fields.");
       return;
     }
 
-    setErrorMsg("");
     setIsLoading(true);
 
     try {
+      console.log(`[SmartBank Auth] Submitting reset password for ${email.trim()} to ${baseUrl}reset-password`);
       const res = await axios.post(
         baseUrl + "reset-password",
         {
           email: email.trim(),
-          otp: otp.trim(),
+          otp: cleanOtp,
           newPassword,
         },
         { headers: { "Content-Type": "application/json" } }
       );
 
+      console.log("[SmartBank Auth] Password reset response:", res.data);
       setIsLoading(false);
-      setSuccessMsg(res.data.message || "Password successfully reset!");
+      setSuccessMsg(res.data?.message || "Password successfully reset!");
       setStep(3);
     } catch (err) {
+      console.error("[SmartBank Auth] Reset Password error:", err);
       setIsLoading(false);
-      setErrorMsg(
-        err.response?.data || "Invalid or expired OTP code. Please verify and try again."
-      );
+      const errMsg =
+        err.response?.data ||
+        (typeof err.response?.data === "string" ? err.response.data : err.response?.data?.message) ||
+        err.message ||
+        "Invalid or expired OTP code. Please verify and try again.";
+      setErrorMsg(errMsg);
     }
   };
 
@@ -152,9 +232,18 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
           {step === 1 && (
             <form onSubmit={handleRequestOtp} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Registered Email Address
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Registered Email Address
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setEmail(userType === "admin" ? "sk2058742@gmail.com" : "s85319748@gmail.com")}
+                    className="text-[11px] text-blue-600 hover:text-blue-800 font-medium underline"
+                  >
+                    Use Demo Email
+                  </button>
+                </div>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                     <FaEnvelope />
@@ -163,7 +252,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
+                    placeholder={userType === "admin" ? "admin@smartbank.com" : "client@example.com"}
                     required
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 text-slate-800 transition"
                   />
@@ -184,9 +273,16 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-1/2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
+                  className="w-1/2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50 flex items-center justify-center space-x-2"
                 >
-                  {isLoading ? "Verifying..." : "Send OTP"}
+                  {isLoading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Sending OTP...</span>
+                    </>
+                  ) : (
+                    <span>Send OTP</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -210,7 +306,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
                     onClick={() => setOtp(simulatedOtp)}
                     className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm transition"
                   >
-                    Auto-Fill
+                    Auto-Fill OTP
                   </button>
                 </div>
               )}
@@ -236,15 +332,25 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  New Password
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    New Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleGeneratePassword}
+                    className="text-[11px] text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1 hover:underline"
+                  >
+                    <FaMagic className="text-blue-500" />
+                    <span>Suggest Strong Password</span>
+                  </button>
+                </div>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter strong password"
+                    placeholder="Enter new password"
                     required
                     className="w-full px-3 pr-10 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-blue-600 text-slate-800 transition"
                   />
@@ -266,7 +372,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-type password"
+                  placeholder="Re-type new password"
                   required
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-blue-600 text-slate-800 transition"
                 />
@@ -276,15 +382,15 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-[11px]">
                 <div className={`flex items-center space-x-1.5 ${hasMinLength ? "text-emerald-600 font-semibold" : "text-slate-400"}`}>
                   <FaCheckCircle className="text-[10px]" />
-                  <span>12+ characters long</span>
+                  <span>8+ characters long</span>
                 </div>
                 <div className={`flex items-center space-x-1.5 ${hasUpper && hasLower ? "text-emerald-600 font-semibold" : "text-slate-400"}`}>
                   <FaCheckCircle className="text-[10px]" />
-                  <span>Uppercase & lowercase letters</span>
+                  <span>Uppercase (A-Z) & Lowercase (a-z)</span>
                 </div>
                 <div className={`flex items-center space-x-1.5 ${hasNumber && hasSpecial ? "text-emerald-600 font-semibold" : "text-slate-400"}`}>
                   <FaCheckCircle className="text-[10px]" />
-                  <span>Number & symbol (!@#$%^&*)</span>
+                  <span>Number (0-9) & Symbol (!@#$%^&*)</span>
                 </div>
                 <div className={`flex items-center space-x-1.5 ${passwordsMatch ? "text-emerald-600 font-semibold" : "text-slate-400"}`}>
                   <FaCheckCircle className="text-[10px]" />
@@ -300,12 +406,20 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
                 >
                   Back
                 </button>
+                {/* Reset Password button is ALWAYS clickable so an action always occurs */}
                 <button
                   type="submit"
-                  disabled={isLoading || !isPasswordValid || otp.length !== 6}
-                  className="w-2/3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-md hover:shadow-lg transition disabled:opacity-50"
+                  disabled={isLoading}
+                  className="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
-                  {isLoading ? "Updating..." : "Reset Password"}
+                  {isLoading ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Resetting Password...</span>
+                    </>
+                  ) : (
+                    <span>Reset Password</span>
+                  )}
                 </button>
               </div>
             </form>

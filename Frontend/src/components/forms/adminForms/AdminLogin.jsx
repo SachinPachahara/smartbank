@@ -103,7 +103,7 @@ export default function AdminLogin() {
             onClick={() => setIsForgotModalOpen(true)}
             className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition duration-200"
           >
-            Forgot password?
+            Forgot / Reset password?
           </button>
         </div>
 

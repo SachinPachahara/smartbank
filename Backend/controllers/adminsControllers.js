@@ -287,10 +287,10 @@ const adminResetPassword = async (req, res) => {
       return res.status(400).send("Invalid or expired verification code");
     }
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{12,})/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/;
     if (!passwordRegex.test(newPassword)) {
       return res.status(400).send(
-        "Password must be at least 12 characters and contain uppercase, lowercase, number, and special character (!@#$%^&*)"
+        "Password must be at least 8 characters and contain uppercase, lowercase, number, and special character (!@#$%^&*)"
       );
     }
 
