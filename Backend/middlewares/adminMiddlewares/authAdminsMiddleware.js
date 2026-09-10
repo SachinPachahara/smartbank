@@ -15,18 +15,16 @@ const authAdminProtect = async (req, res, next) => {
       token = req.headers.authorization.split(" ")[1];
       //verify token
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      //Get Admin from Token
-      admin = await Admin.findById(decoded.id);
+      //Get Admin from Token once
+      admin = await Admin.findById(decoded.id).select("-password");
       if (!admin) {
         return res.status(401).send("Not Authorized with invalid token");
       }
       //pass admin object to next middleware
-      req.admin = await Admin.findById(decoded.id);
+      req.admin = admin;
       next();
     } catch (error) {
-      if (!decoded || !(await Admin.findById(decoded.id)))
-        return res.status(401).send("Not Authorized with invalid token");
-      return res.status(500).send("Ooops!! Something Went Wrong, Try again...");
+      return res.status(401).send("Not Authorized with invalid token");
     }
   }
   if (!token) return res.status(401).send("Not Authorized without token");

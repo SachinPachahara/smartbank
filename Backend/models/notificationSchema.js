@@ -13,11 +13,11 @@ const notificationSchema = new mongoose.Schema(
     },
     title: {
       type: String,
-      require: [true, "please provide notification title"],
+      required: [true, "please provide notification title"],
     },
     message: {
       type: String,
-      require: [true, "please provide notification message"],
+      required: [true, "please provide notification message"],
     },
     isSeen: {
       type: Boolean,

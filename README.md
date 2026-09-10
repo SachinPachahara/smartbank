@@ -1,4 +1,4 @@
-# SmartBank — Enterprise FinTech & Distributed Core Banking Platform
+# SmartBank — Full-Stack FinTech Core Banking Simulation
 
 ![SmartBank Banner](https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1200&q=80)
 
@@ -6,31 +6,33 @@
 [![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-ACID_Transactions-47A248?logo=mongodb)](https://www.mongodb.com/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v3.0-38bdf8?logo=tailwind-css)](https://tailwindcss.com/)
-[![Security](https://img.shields.io/badge/Security-OWASP_Hardened-emerald)](#security-architecture)
+[![Security](https://img.shields.io/badge/Security-IDOR_Hardened-emerald)](#security-architecture)
 
-SmartBank is a production-grade FinTech Core Banking simulation architected to solve critical real-world financial software challenges: **distributed concurrency, double-spending immunity, atomic rollbacks, and zero-trust identity isolation**.
+SmartBank is a full-stack FinTech core banking simulation engineered to solve real-world financial software challenges: **atomic multi-document transactions, double-entry ledger bookkeeping, integer paise precision, idempotency, and object-level authorization (IDOR protection)**.
 
 ---
 
-## 🏛️ Core Architectural Highlights
+## 🏛️ Core Engineering Highlights
 
-### 1. Dual-Safety ACID & Atomic Transaction Engine
-Traditional CRUD banking clones update sender and receiver balances sequentially, exposing funds to race conditions or silent deduction upon network failure. 
-- **Atomic Concurrency**: Utilizes conditional operations `{ balance: { $gte: amount } }` paired with atomic `$inc` operators.
-- **ACID Session Fallback**: Implements multi-document `mongoose.startSession()` transactions with automated rollback guards so that sender balances are never lost during partition errors.
-- **Idempotency Safeguards**: Enforces `Idempotency-Key` headers to eliminate duplicate payments on network retries or double-clicks.
+### 1. MongoDB Multi-Document ACID Transactions
+Transfers execute inside atomic multi-document MongoDB transactions (`session.startTransaction()`), ensuring that sender debit and beneficiary credit either succeed together or rollback completely with zero intermediate state.
+- **Atomic Balance Guards**: Uses `{ balance: { $gte: amountInPaise } }` with `$inc` operators.
+- **Idempotency Guarantees**: Enforces a database unique constraint on `idempotencyKey` to prevent duplicate transfers on network retries or double clicks.
+- **No Insecure Fallbacks**: Removes manual "debit → credit → refund" workarounds in favor of native ACID isolation.
 
-### 2. Immutable Double-Entry Financial Ledger
-Replaces unbounded array anti-patterns with a dedicated, indexed `Transactions` collection:
-- Unique cryptographic reference code (`TXN-YYYYMMDD-...`)
-- Source & beneficiary account identifiers
-- Exact debit/credit amounts and post-transaction balance snapshot
-- Searchable audit trail accessible via `/api/account/ledger/:id`
+### 2. Strict Double-Entry Ledger Bookkeeping
+Separates business transaction events (`Transaction`) from atomic accounting entries (`LedgerEntry`). Every financial movement produces paired entries:
+- **Debit**: ₹X (stored in integer paise)
+- **Credit**: ₹X (stored in integer paise)
+- **Guarantee**: Total Debit strictly equals Total Credit (`Total Debit === Total Credit`).
+- **Lean Documents**: Eliminates unbounded subdocument arrays (`in`, `out`, `deposit_logs`, `withdraw_logs`) from the `Accounts` collection, maintaining lean documents and querying transaction history on demand.
 
-### 3. Zero-Trust Access Control (IDOR Elimination)
-- All user resource endpoints (`/api/users/:id`, `/api/account/:id`) enforce object-level token authorization against `req.user.id`.
-- Transfer origins are strictly checked against authenticated customer ownership.
-- Public administrative takeover routes (`/api/admins/owner/create`) auto-lock permanently with `403 Forbidden` once the primary owner is initialized.
+### 3. Integer Paise Money Handling
+To eliminate IEEE 754 floating-point rounding errors common in currency arithmetic, all monetary balances and transfers are stored as integer paise (e.g. ₹100.50 → 10,050 paise) and cleanly converted at the API boundary.
+
+### 4. Object-Level Access Control (IDOR Prevention)
+- All account endpoints (`GET /api/account/:id`, `DELETE /api/account/:id`, `PUT /deposit/:id`, `PUT /withdraw/:id`, `PUT /transfer/:from_id/:to_id`) verify ownership against `req.user.id` or require admin privileges.
+- Public first-owner initialization (`/api/admins/owner/create`) permanently locks with `403 Forbidden` once an initial owner exists.
 
 ---
 
@@ -49,7 +51,7 @@ Replaces unbounded array anti-patterns with a dedicated, indexed `Transactions` 
 
 - **Frontend**: React 18, Vite, Redux Toolkit, React Router v6, Tailwind CSS, React Icons
 - **Backend**: Node.js, Express.js, MongoDB, Mongoose, JWT (JSON Web Tokens), Bcrypt.js
-- **Architecture**: Distributed RESTful APIs, Double-Entry Ledger, Atomic Conditional Concurrency Control
+- **Architecture**: RESTful APIs, MongoDB ACID Transactions, Double-Entry Ledger, Integer Precision Accounting
 
 ---
 

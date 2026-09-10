@@ -6,12 +6,12 @@ const AccountRequestSchema = new mongoose.Schema(
   {
     client_id: {
       type: String,
-      require: [true, "please provide client id"],
+      required: [true, "please provide client id"],
     },
     initial_balance: {
       type: Number,
-      require: [true, "please provide initial balance"],
-      min: [500, "Initial Balance Can Not less Than 500L.E"],
+      required: [true, "please provide initial balance"],
+      min: [500, "Initial Balance Cannot be less than 500"],
     },
   },
   {

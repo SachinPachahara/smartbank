@@ -15,8 +15,12 @@ const transactionSchema = new mongoose.Schema(
     },
     amount: {
       type: Number,
-      required: [true, "Transaction amount is required"],
-      min: [1, "Amount must be greater than 0"],
+      required: [true, "Transaction amount in paise is required"],
+      min: [1, "Amount must be at least 1 paise"],
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer paise value",
+      },
     },
     senderAccountId: {
       type: String,
@@ -44,6 +48,7 @@ const transactionSchema = new mongoose.Schema(
     idempotencyKey: {
       type: String,
       sparse: true,
+      unique: true,
       index: true,
     },
     balanceAfter: {

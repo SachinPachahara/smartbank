@@ -15,19 +15,16 @@ const authUserProtect = async (req, res, next) => {
       token = req.headers.authorization.split(" ")[1];
       //verify token
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      //Get User from Token
-      user = await User.findById(decoded.id);
+      //Get User from Token once
+      user = await User.findById(decoded.id).select("-password");
       if (!user) {
         return res.status(401).send("Not Authorized with invalid token");
       }
       //pass user object to next middleware
-      req.user = await User.findById(decoded.id);
+      req.user = user;
       next();
     } catch (error) {
-      if (!decoded || !(await User.findById(decoded.id))) {
-        return res.status(401).send("Not Authorized with invalid token");
-      }
-      return res.status(500).send("Ooops!! Something Went Wrong, Try again...");
+      return res.status(401).send("Not Authorized with invalid token");
     }
   }
   if (!token) return res.status(401).send("Not Authorized without token");

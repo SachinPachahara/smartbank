@@ -5,8 +5,9 @@ const AccountRequest = require("../models/accountRequestModel");
 //@Access >>>> Private (user only)
 const createAccountRequest = async (req, res, next) => {
   try {
+    const clientId = req.user ? req.user.id.toString() : req.body.id;
     const accountRequest = await AccountRequest.create({
-      client_id: req.body.id,
+      client_id: clientId,
       initial_balance: req.body.balance,
     });
     //go to notification with data

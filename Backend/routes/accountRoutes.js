@@ -21,9 +21,6 @@ const {
   checkAccount,
 } = require("../middlewares/accountMiddlewares/checkAccount");
 const {
-  checkBalance,
-} = require("../middlewares/accountMiddlewares/checkBalance");
-const {
   sendNotification,
 } = require("../middlewares/notificationMiddleware/sendNotificationMiddleware");
 const {
@@ -49,17 +46,16 @@ router
     checkUserStatus,
     checkPassword,
     checkAccount,
-    checkBalance,
     transfer,
     sendNotification
   );
 
 router
   .route("/deposit/:id")
-  .put(authUserProtect, checkUserStatus, checkPassword, checkBalance, deposit);
+  .put(authUserProtect, checkUserStatus, checkPassword, deposit);
 
 router
   .route("/withdraw/:id")
-  .put(authUserProtect, checkUserStatus, checkPassword, checkBalance, withdraw);
+  .put(authUserProtect, checkUserStatus, checkPassword, withdraw);
 
 module.exports = router;
