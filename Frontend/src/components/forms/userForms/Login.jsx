@@ -8,8 +8,10 @@ import { login } from "../../../state/features/User/Auth/authSlice";
 import FormButton from "../../shared/FormButton";
 import { Logo } from "../../shared/Logo";
 import MessagesContainer from "../../shared/MessagesContainer";
+import ForgotPasswordModal from "../ForgotPasswordModal";
 
 export default function Login() {
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [formInputs, setFormInputs] = useState({
     email: "",
     password: "",
@@ -96,12 +98,13 @@ export default function Login() {
           />
         </div>
         <div className="flex justify-end items-center mb-6">
-          <a
-            href="#"
-            className="text-blue-600 hover:text-blue-700 focus:text-blue-700 transition duration-200 ease-in-out"
+          <button
+            type="button"
+            onClick={() => setIsForgotModalOpen(true)}
+            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition duration-200"
           >
             Forgot password?
-          </a>
+          </button>
         </div>
 
         {/*Request Status and Errors*/}
@@ -132,6 +135,13 @@ export default function Login() {
           </Link>
         </p>
       </form>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        userType="user"
+      />
     </div>
   );
 }

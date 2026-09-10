@@ -228,6 +228,86 @@ const updateAdminRole = async (req, res) => {
   }
 };
 
+//@desc   >>>> Admin Forgot Password - Request OTP
+//@route  >>>> POST /api/admins/forgot-password
+//@Access >>>> Public
+const adminForgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).send("Please provide your registered admin email address");
+  }
+
+  try {
+    const admin = await Admin.findOne({ email: email.toLowerCase().trim() });
+    if (!admin) {
+      return res.status(404).send("No administrator account found with this email address");
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    admin.resetPasswordToken = otp;
+    admin.resetPasswordExpires = expiry;
+    await admin.save();
+
+    console.log(`[SmartBank Security] Admin Password Reset OTP for ${admin.email}: ${otp}`);
+
+    res.status(200).json({
+      message: "Administrator password reset OTP generated",
+      email: admin.email,
+      simulatedOtp: otp,
+    });
+  } catch (error) {
+    res.status(500).send("Ooops!! Something Went Wrong, Try again...");
+  }
+};
+
+//@desc   >>>> Admin Reset Password - Verify OTP & Set New Password
+//@route  >>>> POST /api/admins/reset-password
+//@Access >>>> Public
+const adminResetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res.status(400).send("Please provide email, verification OTP, and new password");
+  }
+
+  try {
+    const admin = await Admin.findOne({ email: email.toLowerCase().trim() });
+    if (!admin) {
+      return res.status(404).send("Administrator account not found");
+    }
+
+    if (
+      !admin.resetPasswordToken ||
+      admin.resetPasswordToken !== otp.toString().trim() ||
+      !admin.resetPasswordExpires ||
+      new Date(admin.resetPasswordExpires) < new Date()
+    ) {
+      return res.status(400).send("Invalid or expired verification code");
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{12,})/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).send(
+        "Password must be at least 12 characters and contain uppercase, lowercase, number, and special character (!@#$%^&*)"
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    admin.password = hashedPassword;
+    admin.resetPasswordToken = null;
+    admin.resetPasswordExpires = null;
+    await admin.save();
+
+    res.status(200).json({
+      message: "Admin password has been successfully reset. Please log in with your new password.",
+    });
+  } catch (error) {
+    res.status(500).send("Ooops!! Something Went Wrong, Try again...");
+  }
+};
+
 module.exports = {
   getAdmins,
   getOneAdmin,
@@ -238,4 +318,6 @@ module.exports = {
   updateOwner,
   deleteAdmin,
   updateAdminRole,
+  adminForgotPassword,
+  adminResetPassword,
 };

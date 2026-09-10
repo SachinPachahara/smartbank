@@ -21,6 +21,8 @@ const {
   userLogin,
   updateUserStatus,
   notificationUpdate,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/usersControllers");
 const {
   checkUserStatus,
@@ -44,6 +46,8 @@ router
   .delete(authAdminProtect, deleteUser);
 
 router.route("/login").post(userLogin);
+router.route("/forgot-password").post(forgotPassword);
+router.route("/reset-password").post(resetPassword);
 
 router.route("/:id/updatestatus").put(authAdminProtect, updateUserStatus);
 

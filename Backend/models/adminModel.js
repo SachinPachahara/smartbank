@@ -45,6 +45,14 @@ const adminSchema = new mongoose.Schema(
         message: "{VALUE} is not supported as a Role",
       },
     },
+    resetPasswordToken: {
+      type: String,
+      default: null,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

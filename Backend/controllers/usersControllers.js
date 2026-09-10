@@ -235,6 +235,85 @@ const updateUserStatus = async (req, res) => {
     res.status(500).send("Ooops!! Something Went Wrong, Try again...");
   }
 };
+//@desc   >>>> Forgot Password - Request OTP
+//@route  >>>> POST /api/users/forgot-password
+//@Access >>>> Public
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).send("Please provide your registered email address");
+  }
+
+  try {
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).send("No account found with this email address");
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    user.resetPasswordToken = otp;
+    user.resetPasswordExpires = expiry;
+    await user.save();
+
+    console.log(`[SmartBank Security] Password Reset OTP for ${user.email}: ${otp}`);
+
+    res.status(200).json({
+      message: "Password reset OTP sent to your registered email",
+      email: user.email,
+      simulatedOtp: otp,
+    });
+  } catch (error) {
+    res.status(500).send("Ooops!! Something Went Wrong, Try again...");
+  }
+};
+
+//@desc   >>>> Reset Password - Verify OTP & Set New Password
+//@route  >>>> POST /api/users/reset-password
+//@Access >>>> Public
+const resetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res.status(400).send("Please provide email, verification OTP, and new password");
+  }
+
+  try {
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).send("User account not found");
+    }
+
+    if (
+      !user.resetPasswordToken ||
+      user.resetPasswordToken !== otp.toString().trim() ||
+      !user.resetPasswordExpires ||
+      new Date(user.resetPasswordExpires) < new Date()
+    ) {
+      return res.status(400).send("Invalid or expired verification code");
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{12,})/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).send(
+        "Password must be at least 12 characters and contain uppercase, lowercase, number, and special character (!@#$%^&*)"
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    res.status(200).json({
+      message: "Password has been successfully reset. Please log in with your new password.",
+    });
+  } catch (error) {
+    res.status(500).send("Ooops!! Something Went Wrong, Try again...");
+  }
+};
 
 module.exports = {
   getUsers,
@@ -245,4 +324,6 @@ module.exports = {
   deleteUser,
   updateUserStatus,
   notificationUpdate,
+  forgotPassword,
+  resetPassword,
 };

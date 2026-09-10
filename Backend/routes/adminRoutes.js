@@ -25,6 +25,8 @@ const {
   adminLogin,
   updateAdminRole,
   createFirstAdmin,
+  adminForgotPassword,
+  adminResetPassword,
 } = require("../controllers/adminsControllers");
 
 router
@@ -33,6 +35,8 @@ router
   .post(authAdminProtect, checkRole, validatePassword, createAdmin);
 
 router.route("/login").post(adminLogin);
+router.route("/forgot-password").post(adminForgotPassword);
+router.route("/reset-password").post(adminResetPassword);
 
 router
   .route("/:id")

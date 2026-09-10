@@ -86,6 +86,14 @@ const userSchema = new mongoose.Schema(
     },
     accounts: [String],
     notifications: [notificationSchema],
+    resetPasswordToken: {
+      type: String,
+      default: null,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

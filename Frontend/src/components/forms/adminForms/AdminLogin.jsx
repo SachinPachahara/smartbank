@@ -8,6 +8,7 @@ import { adminLogin } from "../../../state/features/Admin/Auth/adminAuthSlice";
 import FormButton from "../../shared/FormButton";
 import { Logo } from "../../shared/Logo";
 import MessagesContainer from "../../shared/MessagesContainer";
+import ForgotPasswordModal from "../ForgotPasswordModal";
 
 export default function AdminLogin() {
   const [formInputs, setFormInputs] = useState({
@@ -15,6 +16,7 @@ export default function AdminLogin() {
     password: "",
     msg: "",
   });
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
   const { email, password, msg } = formInputs;
 
@@ -96,12 +98,13 @@ export default function AdminLogin() {
           />
         </div>
         <div className="flex justify-end items-center mb-6">
-          <a
-            href="#"
-            className="text-blue-600 hover:text-blue-700 focus:text-blue-700 transition duration-200 ease-in-out"
+          <button
+            type="button"
+            onClick={() => setIsForgotModalOpen(true)}
+            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition duration-200"
           >
             Forgot password?
-          </a>
+          </button>
         </div>
 
         {/*Request Status and Errors*/}
@@ -120,6 +123,13 @@ export default function AdminLogin() {
           icon={<RiLoginCircleFill className="mb-[-2px] ml-1" size={27} />}
         />
       </form>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        userType="admin"
+      />
     </div>
   );
 }
