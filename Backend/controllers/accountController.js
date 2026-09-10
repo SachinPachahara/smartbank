@@ -14,6 +14,15 @@ const toRupees = (paise) => {
   return (paise || 0) / 100;
 };
 
+// Strict Object-Level Ownership & Authorization Helper
+const checkOwnership = (account, user) => {
+  if (!account || !user) return false;
+  const userId = (user.id || user._id).toString();
+  const isOwner = account.client_id && account.client_id.toString() === userId;
+  const isAdmin = user.role === "admin";
+  return isOwner || isAdmin;
+};
+
 //@desc   >>>> Create Account
 //@route  >>>> POST /api/account/create
 //@Access >>>> Private (through admin approve only)
@@ -92,7 +101,7 @@ const getAccount = async (req, res) => {
     }
 
     // IDOR check: Verify account belongs to authenticated user or caller is admin
-    if (req.user && account.client_id !== req.user.id.toString() && req.user.role !== "admin") {
+    if (!checkOwnership(account, req.user)) {
       return res.status(403).send("Forbidden: Access denied to other user's account");
     }
 
@@ -170,7 +179,7 @@ const deleteAccount = async (req, res) => {
     }
 
     // IDOR ownership check
-    if (req.user && account.client_id !== req.user.id.toString() && req.user.role !== "admin") {
+    if (!checkOwnership(account, req.user)) {
       return res.status(403).send("Forbidden: You do not have permission to delete this account");
     }
 
@@ -227,7 +236,7 @@ const transfer = async (req, res, next) => {
     }
 
     // IDOR / Ownership validation
-    if (req.user && sendingAccount.client_id !== req.user.id.toString() && req.user.role !== "admin") {
+    if (!checkOwnership(sendingAccount, req.user)) {
       return res.status(403).send("Forbidden: You do not have authorization to transfer from this account");
     }
 
@@ -411,7 +420,7 @@ const deposit = async (req, res) => {
     }
 
     // IDOR / Ownership check
-    if (req.user && account.client_id !== req.user.id.toString() && req.user.role !== "admin") {
+    if (!checkOwnership(account, req.user)) {
       return res.status(403).send("Forbidden: You do not have authorization to deposit to this account");
     }
 
@@ -529,7 +538,7 @@ const withdraw = async (req, res) => {
     }
 
     // IDOR / Ownership check
-    if (req.user && account.client_id !== req.user.id.toString() && req.user.role !== "admin") {
+    if (!checkOwnership(account, req.user)) {
       return res.status(403).send("Forbidden: You do not have authorization to withdraw from this account");
     }
 
@@ -647,7 +656,7 @@ const getAccountLedger = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
     if (!account) return res.status(404).send("Account Not Found");
-    if (req.user && account.client_id !== req.user.id.toString() && req.user.role !== "admin") {
+    if (!checkOwnership(account, req.user)) {
       return res.status(403).send("Forbidden: Cannot view another user's ledger");
     }
 
