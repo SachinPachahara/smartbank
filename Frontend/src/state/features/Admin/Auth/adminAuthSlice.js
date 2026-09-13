@@ -114,6 +114,7 @@ export const adminAuthSlice = createSlice({
         state.isError = true;
         state.message = action.payload;
         state.isSuccess = false;
+        state.info = null;
       })
       .addCase(updateAdmin.pending, (state) => {
         state.isLoading = true;

@@ -1,7 +1,7 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import authReducer from "../features/User/Auth/authSlice";
 import userReducer from "../features/User/UserData/userSlice";
-import storage from "redux-persist/lib/storage";
+import storageSession from "redux-persist/lib/storage/session";
 import { persistReducer, persistStore } from "redux-persist";
 import { encryptTransform } from "redux-persist-transform-encrypt";
 import thunk from "redux-thunk";
@@ -11,10 +11,19 @@ import usersReducer from "../features/Admin/UsersActions/usersSlice";
 import accountRequestsReducer from "../features/Admin/AccountRequests/accountRequestsSlice";
 import accountReducer from "../features/Account/accountSlice";
 
+// Clean up any stale localStorage left over from previous legacy versions
+if (typeof window !== "undefined") {
+  try {
+    window.localStorage.removeItem("persist:root");
+  } catch (e) {
+    // ignore
+  }
+}
+
 const persistConfig = {
   key: "root",
-  storage,
-  //encrypting state being stored in localstorage
+  storage: storageSession,
+  //encrypting state being stored in session storage
   transforms: [
     encryptTransform({
       secretKey: "sprintsBankingSystemUsingREDUXPERSIST",
@@ -36,23 +45,34 @@ const appReducer = combineReducers({
   accountRequests: accountRequestsReducer,
 });
 
-//All Logout actions
-const logoutActions = [
-  "user/logout",
-  "account/logout",
-  "auth/logout",
-  "auth/admin/logout",
-  "owner/logout",
-  "admins/logout",
-];
+export const clearAuthSession = () => {
+  try {
+    if (persistor) {
+      persistor.purge();
+    }
+  } catch (e) {
+    console.error("Persistor purge error:", e);
+  }
+  try {
+    if (typeof window !== "undefined") {
+      window.sessionStorage?.clear();
+      window.localStorage?.removeItem("persist:root");
+    }
+  } catch (e) {
+    console.error("Storage clear error:", e);
+  }
+};
 
-//remove All Stored state in local storage when logging out
+// Check if an action is any logout or reset action
+const isLogoutAction = (actionType) => {
+  if (!actionType || typeof actionType !== "string") return false;
+  return actionType.toLowerCase().includes("logout") || actionType === "app/reset";
+};
+
+// Remove stored session and reset entire Redux state when logging out
 const rootReducer = (state, action) => {
-  if (logoutActions.includes(action.type)) {
-    // for all keys defined in your persistConfig(s)
-    storage.removeItem("persist:root");
-    // storage.removeItem('persist:otherKey')
-
+  if (isLogoutAction(action.type)) {
+    clearAuthSession();
     return appReducer(undefined, action);
   }
   return appReducer(state, action);

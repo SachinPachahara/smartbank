@@ -8,6 +8,7 @@ import { adminsLogoutRequets } from "../../state/features/Admin/AccountRequests/
 import { adminLogout } from "../../state/features/Admin/Auth/adminAuthSlice";
 import { ownerLogout } from "../../state/features/Admin/Owner/ownerSlice";
 import { adminsLogout } from "../../state/features/Admin/UsersActions/usersSlice";
+import { clearAuthSession } from "../../state/store/store";
 
 export const AdminNavLinks = ({ admin }) => {
   const dispatch = useDispatch();
@@ -33,10 +34,12 @@ export const AdminNavLinks = ({ admin }) => {
       title: "Logout",
       icon: RiLogoutBoxRFill,
       handleLogout: () => {
+        clearAuthSession();
         dispatch(adminsLogout());
         dispatch(ownerLogout());
         dispatch(adminLogout());
         dispatch(adminsLogoutRequets());
+        window.location.href = "/";
       },
     },
   ];

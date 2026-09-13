@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAdmin } from "../Admin/Auth/adminAuthSlice";
+import { adminLogout, getAdmin } from "../Admin/Auth/adminAuthSlice";
+import { clearAuthSession } from "../../store/store";
 
 export default function UseDetectAdmin() {
-  const { info } = useSelector((state) => state.adminAuth);
+  const { info, isError } = useSelector((state) => state.adminAuth);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -17,5 +18,13 @@ export default function UseDetectAdmin() {
     }
   }, []);
 
+  useEffect(() => {
+    if (info && isError) {
+      clearAuthSession();
+      dispatch(adminLogout());
+    }
+  }, [info, isError]);
+
   return info;
 }
+

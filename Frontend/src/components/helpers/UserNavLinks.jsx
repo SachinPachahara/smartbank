@@ -28,6 +28,7 @@ import {
   resetUserStatus,
   userLogout,
 } from "../../state/features/User/UserData/userSlice";
+import { clearAuthSession } from "../../state/store/store";
 import { navbarLinksClickHandler } from "./navbarLinksClickHandler";
 import { UserNavbarSkeleton } from "./UserNavbarSkeleton";
 
@@ -113,12 +114,14 @@ export const UserNavLinks = ({ user }) => {
       title: "Logout",
       icon: RiLogoutBoxRFill,
       handleLogout: function () {
+        clearAuthSession();
         dispatch(accountLogout());
         dispatch(logout());
         dispatch(userLogout());
         dispatch(resetUserStatus());
         dispatch(resetAuthStatus());
         dispatch(resetAccountStatus());
+        window.location.href = "/";
       },
     },
   ];

@@ -97,6 +97,9 @@ export const authSlice = createSlice({
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
+      })
+      .addCase("user/getUser/rejected", (state) => {
+        state.user = null;
       });
   },
 });
