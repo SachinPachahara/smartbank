@@ -8,15 +8,15 @@ export const AboutUs = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 mb-4">
-            <BsShieldCheck size={14} /> Our Mission & Architecture
+            <BsShieldCheck size={14} /> Core Banking Simulation Architecture
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Banking Engineered for <span className="text-teal-700">Resilience & Trust</span>
+            Simulation Engineered for <span className="text-teal-700">Financial Resilience & Rigor</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed">
-            SmartBank was architected to eliminate the common vulnerabilities of traditional banking software.
-            By coupling distributed multi-document ACID transactions with immutable ledger auditing, we guarantee that
-            every penny is secure, verifiable, and available 24/7.
+            SmartBank is an enterprise-grade Core Banking & FinTech Simulation Engine modeled after production banking
+            standards. By combining distributed multi-document ACID transactions with immutable double-entry ledger auditing
+            and Maker-Checker administrative governance, we simulate real-world financial infrastructure with mathematical precision.
           </p>
         </div>
 
@@ -26,10 +26,9 @@ export const AboutUs = () => {
             <div className="w-12 h-12 bg-teal-100 text-teal-800 rounded-xl flex items-center justify-center mb-5">
               <BsShieldCheck size={26} />
             </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2">Zero-Trust Security</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Zero-Trust & IDOR Safe</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Every request is authenticated against strict role-based access controls (RBAC) and protected against IDOR
-              vulnerabilities.
+              Every request enforces object-level ownership checks (IDOR immunity) and strict role-based access control (RBAC).
             </p>
           </div>
 
@@ -39,7 +38,7 @@ export const AboutUs = () => {
             </div>
             <h3 className="text-lg font-bold text-slate-800 mb-2">ACID Double-Entry Ledger</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Atomic operations prevent double spending and race conditions during simultaneous deposits and transfers.
+              Atomic MongoDB transactions execute synchronized DEBIT and CREDIT ledger entries, preventing double-spending and race conditions.
             </p>
           </div>
 
@@ -47,9 +46,9 @@ export const AboutUs = () => {
             <div className="w-12 h-12 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center mb-5">
               <BsGraphUp size={26} />
             </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2">Real-Time Auditing</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Integer Paise Precision</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Instantaneous notifications and transparent balance tracking ensure customers maintain 100% oversight of their money.
+              Currency stored in integer paise (₹1 = 100 paise), fully eliminating floating-point rounding discrepancies.
             </p>
           </div>
 
@@ -57,9 +56,9 @@ export const AboutUs = () => {
             <div className="w-12 h-12 bg-blue-100 text-blue-800 rounded-xl flex items-center justify-center mb-5">
               <BsPeople size={26} />
             </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2">Customer First</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Maker-Checker Governance</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Dedicated administrative governance ensures rapid account approval, active verification, and personalized support.
+              Simulates realistic KYC onboarding where customer account requests enter a Pending queue until Admin approval.
             </p>
           </div>
         </div>
@@ -68,20 +67,20 @@ export const AboutUs = () => {
         <div className="bg-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-800">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-slate-800">
             <div className="pt-4 md:pt-0">
-              <div className="text-3xl sm:text-5xl font-extrabold text-teal-400">99.99%</div>
-              <div className="mt-2 text-xs sm:text-sm font-medium text-slate-400">Service Availability</div>
+              <div className="text-3xl sm:text-5xl font-extrabold text-teal-400">100%</div>
+              <div className="mt-2 text-xs sm:text-sm font-medium text-slate-400">ACID Transaction Compliance</div>
             </div>
             <div className="pt-4 md:pt-0">
               <div className="text-3xl sm:text-5xl font-extrabold text-indigo-400">0%</div>
-              <div className="mt-2 text-xs sm:text-sm font-medium text-slate-400">Fund Discrepancy Rate</div>
+              <div className="mt-2 text-xs sm:text-sm font-medium text-slate-400">Rounding Precision Error</div>
             </div>
             <div className="pt-4 md:pt-0">
               <div className="text-3xl sm:text-5xl font-extrabold text-amber-400">&lt;50ms</div>
-              <div className="mt-2 text-xs sm:text-sm font-medium text-slate-400">Ledger Settlement</div>
+              <div className="mt-2 text-xs sm:text-sm font-medium text-slate-400">Atomic Settlement</div>
             </div>
             <div className="pt-4 md:pt-0">
               <div className="text-3xl sm:text-5xl font-extrabold text-emerald-400">256-bit</div>
-              <div className="mt-2 text-xs sm:text-sm font-medium text-slate-400">AES Bank Encryption</div>
+              <div className="mt-2 text-xs sm:text-sm font-medium text-slate-400">Bank-Grade Encryption</div>
             </div>
           </div>
         </div>

@@ -19,7 +19,7 @@ export function useDocumentTitle() {
         h3.classList.toggle("hidden");
       }
     } else if (location?.pathname !== "/" && location?.pathname !== "/login") {
-      document.title = "E-Bank | Everything You Need";
+      document.title = "SmartBank | Core Banking Simulation";
       setTitle("");
     } else if (location?.pathname === "/") {
       document.title = "Home";

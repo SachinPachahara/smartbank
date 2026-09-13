@@ -23,21 +23,21 @@ export default function Hero({ onOpenLegal }) {
             {/* Trust badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-teal-950/80 text-teal-300 border border-teal-500/40 shadow-inner">
               <BsShieldFillCheck size={14} className="text-teal-400" />
-              <span>Next-Gen FinTech • ACID Ledger Guaranteed • 256-Bit SSL</span>
+              <span>Core Banking Simulation Engine • Double-Entry Ledger • ACID Transactions</span>
             </div>
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] text-white">
               Smarter, Safer, <br />
               <span className="bg-gradient-to-r from-teal-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">
-                Frictionless Banking
+                FinTech Banking Simulation
               </span>
             </h1>
 
             {/* Subheading */}
             <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              Experience seamless electronic funds transfer, multi-account ledgering, and real-time fraud mitigation.
-              Architected with zero-trust security and atomic transaction guarantees so your funds are never compromised.
+              Experience production-depth core banking workflows: customer onboarding, administrative approval queues,
+              atomic multi-document fund transfers, and immutable double-entry ledger auditing with mathematical precision.
             </p>
 
             {/* Action Buttons */}
@@ -46,7 +46,7 @@ export default function Hero({ onOpenLegal }) {
                 to="/register"
                 className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-teal-500 to-teal-700 hover:from-teal-600 hover:to-teal-800 text-white font-bold rounded-xl shadow-lg shadow-teal-900/40 hover:shadow-teal-900/60 transition-all duration-200 flex items-center justify-center gap-2 group"
               >
-                <span>Open Free Account</span>
+                <span>Start User Simulation</span>
                 <MdArrowForward size={18} className="group-hover:translate-x-1 transition" />
               </Link>
               <Link
@@ -54,7 +54,7 @@ export default function Hero({ onOpenLegal }) {
                 className="w-full sm:w-auto px-8 py-3.5 bg-slate-800/90 hover:bg-slate-800 text-slate-200 hover:text-white font-semibold rounded-xl border border-slate-700 hover:border-slate-600 transition duration-200 flex items-center justify-center gap-2"
               >
                 <MdLock size={17} className="text-teal-400" />
-                <span>Secure User Login</span>
+                <span>User Portal Login</span>
               </Link>
             </div>
 

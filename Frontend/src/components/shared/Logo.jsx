@@ -12,9 +12,9 @@ export const Logo = ({ textSize = null, bg = true }) => {
       <span
         className={`${
           textSize ? textSize : "text-3xl"
-        } p-1  text-blue-800 font-bold `}
+        } p-1 text-blue-800 font-extrabold tracking-tight`}
       >
-        E-BANK
+        SmartBank
       </span>
     </div>
   );
