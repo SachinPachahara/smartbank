@@ -7,6 +7,16 @@ const apiLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
+// Dedicated strict rate limiter for authentication & OTP endpoints to prevent brute-force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // Limit each IP to 15 attempts per 15 minutes
+  message: "Too many authentication attempts from this IP address. Please try again after 15 minutes for your security.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 module.exports = {
   apiLimiter,
+  authLimiter,
 };

@@ -1,5 +1,6 @@
 const Admin = require("../models/adminModel");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const { generateAdminsToken } = require("../helpers/generateAdminsToken");
 
 //@desc   >>>> Get All Admins
@@ -34,36 +35,33 @@ const getOneAdmin = async (req, res) => {
 };
 
 //@desc   >>>> admin login
-//@route  >>>> GET /api/admins/login
-//@Access >>>> privete(admins + owner)
+//@route  >>>> POST /api/admins/login
+//@Access >>>> public
 const adminLogin = async (req, res) => {
-  //check for empty body
-  if (!req.body.email || !req.body.password)
-    return res.status(404).send("empty body request");
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send("Please provide both email and password");
+  }
+
   const { email, password } = req.body;
-  let admin;
   try {
-    admin = await Admin.findOne({ email });
-    //check for password
-    const isCorrectPassword = await bcrypt.compare(password, admin.password);
-    if (isCorrectPassword) {
-      return res.status(200).json({
-        id: admin.id,
-        name: admin.admin_name,
-        email: admin.email,
-        role: admin.role,
-        token: generateAdminsToken(admin.id, admin.email, admin.role),
-      });
-    } else {
-      return res.status(404).send("Wrong Credintials - wrong password");
-    }
-  } catch (error) {
-    if (!admin || !isCorrectPassword) {
-      return res
-        .status(404)
-        .send("Wrong Credintials - wrong email or password");
+    const admin = await Admin.findOne({ email: email.toLowerCase().trim() });
+    if (!admin) {
+      return res.status(401).send("Invalid email or password");
     }
 
+    const isCorrectPassword = await bcrypt.compare(password, admin.password);
+    if (!isCorrectPassword) {
+      return res.status(401).send("Invalid email or password");
+    }
+
+    return res.status(200).json({
+      id: admin.id,
+      name: admin.admin_name,
+      email: admin.email,
+      role: admin.role,
+      token: generateAdminsToken(admin.id, admin.email, admin.role),
+    });
+  } catch (error) {
     res.status(500).send("Ooops!! Something Went Wrong, Try again...");
   }
 };
@@ -134,9 +132,18 @@ const createFirstAdmin = async (req, res) => {
 //@Access >>>> private(all Admin for their accounts)
 const updateAdmin = async (req, res) => {
   try {
+    // IDOR / Privilege check: Non-owners can only update their own admin account
+    if (req.admin && req.admin.role !== "owner" && req.admin.id.toString() !== req.params.id) {
+      return res.status(403).send("Forbidden: Cannot modify another administrator's profile");
+    }
+
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
     //get admin
     const admin = await Admin.findById(req.params.id);
+    if (!admin) {
+      return res.status(404).send("Administrator not found");
+    }
+
     //update user with new values
     admin.email = req.body.email;
     admin.markModified("email");
@@ -243,7 +250,7 @@ const adminForgotPassword = async (req, res) => {
       return res.status(404).send("No administrator account found with this email address");
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
     const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
     admin.resetPasswordToken = otp;
@@ -252,11 +259,15 @@ const adminForgotPassword = async (req, res) => {
 
     console.log(`[SmartBank Security] Admin Password Reset OTP for ${admin.email}: ${otp}`);
 
-    res.status(200).json({
+    const responsePayload = {
       message: "Administrator password reset OTP generated",
       email: admin.email,
-      simulatedOtp: otp,
-    });
+    };
+    if (process.env.NODE_ENV !== "production") {
+      responsePayload.simulatedOtp = otp;
+    }
+
+    res.status(200).json(responsePayload);
   } catch (error) {
     res.status(500).send("Ooops!! Something Went Wrong, Try again...");
   }

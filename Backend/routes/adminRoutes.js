@@ -14,6 +14,9 @@ const {
 const {
   checkRole,
 } = require("../middlewares/adminMiddlewares/roleAuthMiddleware");
+const {
+  authLimiter,
+} = require("../middlewares/rateLimitMiddleware/rateLimitMiddleware");
 
 const {
   getAdmins,
@@ -34,9 +37,9 @@ router
   .get(authAdminProtect, checkRole, getAdmins)
   .post(authAdminProtect, checkRole, validatePassword, createAdmin);
 
-router.route("/login").post(adminLogin);
-router.route("/forgot-password").post(adminForgotPassword);
-router.route("/reset-password").post(adminResetPassword);
+router.route("/login").post(authLimiter, adminLogin);
+router.route("/forgot-password").post(authLimiter, adminForgotPassword);
+router.route("/reset-password").post(authLimiter, adminResetPassword);
 
 router
   .route("/:id")
@@ -50,7 +53,7 @@ router
 
 router
   .route("/owner/:id")
-  .put(authAdminProtect, checkPassword, validatePassword, updateOwner);
+  .put(authAdminProtect, checkRole, checkPassword, validatePassword, updateOwner);
 
 //Comment/Remove This Route after creating the first owner
  router.route("/owner/create").post(createFirstAdmin);

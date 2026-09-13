@@ -1,5 +1,6 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const { generateUsersToken } = require("../helpers/generateUsersToken");
 
 //@desc   >>>> Get All Users
@@ -75,34 +76,33 @@ const createUser = async (req, res) => {
 };
 
 //@desc   >>>> user login
-//@route  >>>> GET /api/users/login
+//@route  >>>> POST /api/users/login
 //@Access >>>> public
 const userLogin = async (req, res) => {
   //check for empty body
-  if (!req.body.email || !req.body.password)
-    return res.status(404).send("empty body request");
-  const { email, password } = req.body;
-  let user;
-  try {
-    user = await User.findOne({ email });
-    //ckeck for password
-    const isCorrectPassword = await bcrypt.compare(password, user.password);
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send("Please provide both email and password");
+  }
 
-    if (isCorrectPassword) {
-      return res.status(200).json({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        token: generateUsersToken(user.id, user.email),
-      });
-    } else {
-      return res.status(404).send("Wrong Credintials - wrong password");
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(401).send("Invalid email or password");
     }
+
+    const isCorrectPassword = await bcrypt.compare(password, user.password);
+    if (!isCorrectPassword) {
+      return res.status(401).send("Invalid email or password");
+    }
+
+    return res.status(200).json({
+      id: user.id,
+      name: user.user_name || user.name,
+      email: user.email,
+      token: generateUsersToken(user.id, user.email),
+    });
   } catch (error) {
-    if (!user || !isCorrectPassword)
-      return res
-        .status(404)
-        .send("Wrong Credintials - wrong email or password");
     res.status(500).send("Ooops!! Something Went Wrong, Try again...");
   }
 };
@@ -250,7 +250,7 @@ const forgotPassword = async (req, res) => {
       return res.status(404).send("No account found with this email address");
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
     const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
     user.resetPasswordToken = otp;
@@ -259,11 +259,16 @@ const forgotPassword = async (req, res) => {
 
     console.log(`[SmartBank Security] Password Reset OTP for ${user.email}: ${otp}`);
 
-    res.status(200).json({
+    const responsePayload = {
       message: "Password reset OTP sent to your registered email",
       email: user.email,
-      simulatedOtp: otp,
-    });
+    };
+    // Include simulation OTP only in non-production for local dev/testing
+    if (process.env.NODE_ENV !== "production") {
+      responsePayload.simulatedOtp = otp;
+    }
+
+    res.status(200).json(responsePayload);
   } catch (error) {
     res.status(500).send("Ooops!! Something Went Wrong, Try again...");
   }

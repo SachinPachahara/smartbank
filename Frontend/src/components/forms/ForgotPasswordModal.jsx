@@ -238,7 +238,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
                   </label>
                   <button
                     type="button"
-                    onClick={() => setEmail(userType === "admin" ? "sk2058742@gmail.com" : "s85319748@gmail.com")}
+                    onClick={() => setEmail(userType === "admin" ? "admin@smartbank.com" : "client@smartbank.com")}
                     className="text-[11px] text-blue-600 hover:text-blue-800 font-medium underline"
                   >
                     Use Demo Email

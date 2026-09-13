@@ -27,6 +27,9 @@ const {
 const {
   checkUserStatus,
 } = require("../middlewares/userMiddleware/checkUserStatus");
+const {
+  authLimiter,
+} = require("../middlewares/rateLimitMiddleware/rateLimitMiddleware");
 
 router
   .route("/")
@@ -45,9 +48,9 @@ router
   )
   .delete(authAdminProtect, deleteUser);
 
-router.route("/login").post(userLogin);
-router.route("/forgot-password").post(forgotPassword);
-router.route("/reset-password").post(resetPassword);
+router.route("/login").post(authLimiter, userLogin);
+router.route("/forgot-password").post(authLimiter, forgotPassword);
+router.route("/reset-password").post(authLimiter, resetPassword);
 
 router.route("/:id/updatestatus").put(authAdminProtect, updateUserStatus);
 

@@ -2,15 +2,28 @@ require('dotenv').config({ path: './backend/.env' });
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const { mongoSanitizeMiddleware } = require("./middlewares/security/mongoSanitize");
 
 const app = express();
+
+// HTTP security headers & clickjacking protection
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
 
 //connect to mongodb
 const { connectToMongoose } = require("./config/db");
 
 //middlewares
-//express json parser middleware
-app.use(express.json());
+//express json parser middleware with 50kb payload limit for DoS protection
+app.use(express.json({ limit: "50kb" }));
+app.use(express.urlencoded({ extended: true, limit: "50kb" }));
+
+//NoSQL Injection sanitization middleware
+app.use(mongoSanitizeMiddleware);
 
 //cors middleware
 const { corsProOptions } = require("./config/corsConfig");
