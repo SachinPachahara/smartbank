@@ -8,6 +8,8 @@
     "start": "node Backend/server.js",
     "dev": "nodemon Backend/server.js",
     "dev2": "cd Frontend && npm run dev",
+    "seed:admin": "node Backend/scripts/seed_admin.js",
+    "migrate:atlas": "node Backend/scripts/migrate_to_atlas.js",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix Frontend && npm run build --prefix Frontend"
   },
   "keywords": [],
