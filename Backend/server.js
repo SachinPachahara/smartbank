@@ -1,3 +1,4 @@
+const fs = require("fs");
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 const express = require("express");
@@ -51,16 +52,42 @@ app.use("/api/account", accountRoute);
 const accountRequestRoute = require("./routes/accountRequestRoutes");
 app.use("/api/request", accountRequestRoute);
 
-//serve Frontend
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../Frontend/dist")));
+// Health check endpoint for Render and uptime monitoring
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    environment: process.env.NODE_ENV || "development",
+    timestamp: new Date().toISOString(),
+  });
+});
 
+// Serve Frontend if build exists, otherwise provide API welcome status
+const frontendDist = path.resolve(__dirname, "../Frontend/dist");
+if (fs.existsSync(path.join(frontendDist, "index.html"))) {
+  app.use(express.static(frontendDist));
   app.get("*", (req, res) =>
-    res.sendFile(
-      path.resolve(__dirname, "../", "Frontend", "dist", "index.html")
-    )
+    res.sendFile(path.resolve(frontendDist, "index.html"))
+  );
+} else {
+  app.get("/", (req, res) =>
+    res.status(200).json({
+      message: "SmartBank Core Banking Simulation API is running.",
+      health: "/api/health",
+      documentation: "Connect this backend URL to your Vercel frontend via VITE_API_URL",
+    })
   );
 }
+
+// Global error handler
+app.use((err, req, res, next) => {
+  if (err.message && err.message.includes("CORS")) {
+    return res.status(403).json({ error: err.message });
+  }
+  console.error("Unhandled error:", err);
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === "production" ? "Internal Server Error" : err.message,
+  });
+});
 
 connectToMongoose()
   .then(() => {

@@ -1,14 +1,8 @@
 import axios from "axios";
+import { API_ENDPOINTS, API_BASE_URL } from "../../../../config/apiConfig";
 
-const API_URL =
-  process.env.NODE_ENV === "production"
-    ? "https://ebank-2t3r.onrender.com/api/request/"
-    : "http://localhost:5000/api/request/";
-
-const CREATE_ACCOUNT_API_URL =
-  process.env.NODE_ENV === "production"
-    ? "https://ebank-2t3r.onrender.com/api/account/create"
-    : "http://localhost:5000/api/account/create";
+const API_URL = API_ENDPOINTS.REQUEST;
+const CREATE_ACCOUNT_API_URL = `${API_BASE_URL}/account/create`;
 
 //Get All Account Requests
 const getAllAccountRequests = async (adminData) => {

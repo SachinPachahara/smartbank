@@ -11,6 +11,7 @@ import {
   FaEnvelope,
   FaMagic,
 } from "react-icons/fa";
+import { API_ENDPOINTS } from "../../config/apiConfig";
 
 export default function ForgotPasswordModal({ isOpen, onClose, userType = "user" }) {
   const [step, setStep] = useState(1); // 1: Email, 2: OTP & New Password, 3: Success
@@ -26,21 +27,8 @@ export default function ForgotPasswordModal({ isOpen, onClose, userType = "user"
 
   if (!isOpen) return null;
 
-  // Localhost detection ensures we always hit local port 5000 during dev/testing
-  const isLocal =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1" ||
-      window.location.port === "3000" ||
-      window.location.port === "5173");
-
-  const baseUrl = isLocal
-    ? userType === "admin"
-      ? "http://localhost:5000/api/admins/"
-      : "http://localhost:5000/api/users/"
-    : userType === "admin"
-    ? "https://ebank-2t3r.onrender.com/api/admins/"
-    : "https://ebank-2t3r.onrender.com/api/users/";
+  const baseUrl =
+    userType === "admin" ? API_ENDPOINTS.ADMINS : API_ENDPOINTS.USERS;
 
   // Password requirements validation (8+ characters with uppercase, lowercase, number, special symbol)
   const hasMinLength = newPassword.length >= 8;
