@@ -9,9 +9,11 @@ import FormButton from "../../shared/FormButton";
 import { Logo } from "../../shared/Logo";
 import MessagesContainer from "../../shared/MessagesContainer";
 import ForgotPasswordModal from "../ForgotPasswordModal";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Login() {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formInputs, setFormInputs] = useState({
     email: "",
     password: "",
@@ -85,17 +87,27 @@ export default function Login() {
           >
             Password
           </label>
-          <input
-            type="password"
-            name="password"
-            className="block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-800 focus:outline-none"
-            defaultValue={password}
-            onChange={(e) =>
-              setFormInputs({ ...formInputs, password: e.target.value })
-            }
-            placeholder="Enter Your Password"
-            required
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              className="block w-full px-3 pr-10 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-800 focus:outline-none"
+              defaultValue={password}
+              onChange={(e) =>
+                setFormInputs({ ...formInputs, password: e.target.value })
+              }
+              placeholder="Enter Your Password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-blue-800 focus:outline-none cursor-pointer"
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+            </button>
+          </div>
         </div>
         <div className="flex justify-end items-center mb-6">
           <button

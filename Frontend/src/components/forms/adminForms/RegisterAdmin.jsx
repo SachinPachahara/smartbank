@@ -10,9 +10,12 @@ import MessagesContainer from "../../shared/MessagesContainer";
 import { FcPlus } from "react-icons/fc";
 import { AiFillPlusCircle } from "react-icons/ai";
 import { InputsValidator } from "../helpers/InputsValidator";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export const RegisterAdmin = () => {
   const dispatch = useDispatch();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatedPassword, setShowRepeatedPassword] = useState(false);
 
   const [formInputs, setFormInputs] = useState({
     email: "",
@@ -135,18 +138,28 @@ export const RegisterAdmin = () => {
           >
             New Admin Password
           </label>
-          <input
-            type="password"
-            name="password"
-            id="password"
-            className="block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-800 focus:outline-none"
-            value={password}
-            onChange={(e) =>
-              setFormInputs({ ...formInputs, password: e.target.value })
-            }
-            placeholder="Password"
-            required
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              id="password"
+              className="block w-full px-3 pr-10 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-800 focus:outline-none"
+              value={password}
+              onChange={(e) =>
+                setFormInputs({ ...formInputs, password: e.target.value })
+              }
+              placeholder="Password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-blue-800 focus:outline-none cursor-pointer"
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+            </button>
+          </div>
         </div>
 
         <div className="mb-6">
@@ -156,18 +169,28 @@ export const RegisterAdmin = () => {
           >
             Repeat Password
           </label>
-          <input
-            type="password"
-            name="repeatedPassword"
-            id="repeatedPassword"
-            className="block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-800 focus:outline-none"
-            value={repeatedPassword}
-            onChange={(e) =>
-              setFormInputs({ ...formInputs, repeatedPassword: e.target.value })
-            }
-            placeholder="Repeat Password"
-            required
-          />
+          <div className="relative">
+            <input
+              type={showRepeatedPassword ? "text" : "password"}
+              name="repeatedPassword"
+              id="repeatedPassword"
+              className="block w-full px-3 pr-10 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-800 focus:outline-none"
+              value={repeatedPassword}
+              onChange={(e) =>
+                setFormInputs({ ...formInputs, repeatedPassword: e.target.value })
+              }
+              placeholder="Repeat Password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowRepeatedPassword(!showRepeatedPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-blue-800 focus:outline-none cursor-pointer"
+              title={showRepeatedPassword ? "Hide password" : "Show password"}
+            >
+              {showRepeatedPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+            </button>
+          </div>
         </div>
 
         {/* password validator */}
