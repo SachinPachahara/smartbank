@@ -14,40 +14,48 @@ const createContactTicket = async (req, res) => {
     }
 
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(email.trim())) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!emailRegex.test(cleanEmail)) {
       return res.status(400).send("Please provide a valid email address.");
     }
 
     const ticketId = `TCK-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
-    // Clean valid string or null for userId
+    // Clean userId and attempt user match by ID or Email
+    let matchedUser = null;
     const safeUserId = userId && typeof userId === "string" && userId.trim() ? userId.trim() : null;
+
+    if (safeUserId && mongoose.Types.ObjectId.isValid(safeUserId)) {
+      matchedUser = await User.findById(safeUserId);
+    }
+    if (!matchedUser && cleanEmail) {
+      matchedUser = await User.findOne({ email: cleanEmail });
+    }
+
+    const finalUserId = matchedUser ? matchedUser._id.toString() : safeUserId;
 
     const newTicket = await Contact.create({
       ticketId,
       name: name.trim(),
-      email: email.trim().toLowerCase(),
+      email: cleanEmail,
       message: message.trim(),
-      userId: safeUserId,
+      userId: finalUserId,
       status: "OPEN",
     });
 
-    // Attempt to add notification if user exists, but NEVER fail the ticket creation if notification fails
-    if (safeUserId && mongoose.Types.ObjectId.isValid(safeUserId)) {
+    // If matched to a customer, log an incoming notification
+    if (matchedUser) {
       try {
-        const user = await User.findById(safeUserId);
-        if (user) {
-          user.notifications.push({
-            type: "support-ticket",
-            title: "Support Ticket Created",
-            message: `Your inquiry has been logged under Ticket #${ticketId}. Our banking helpdesk will review it shortly.`,
-            data: [{ ticket_id: ticketId }],
-          });
-          user.markModified("notifications");
-          await user.save();
-        }
+        matchedUser.notifications.push({
+          type: "support-ticket",
+          title: "Support Ticket Created",
+          message: `Your inquiry has been logged under Ticket #${ticketId}. Our banking helpdesk will review it shortly.`,
+          data: [{ ticket_id: ticketId }],
+        });
+        matchedUser.markModified("notifications");
+        await matchedUser.save();
       } catch (notifErr) {
-        console.warn("Could not save notification to user document:", notifErr.message);
+        console.warn("Could not save creation notification:", notifErr.message);
       }
     }
 
@@ -74,6 +82,30 @@ const getContactTickets = async (req, res) => {
   }
 };
 
+//@desc   >>>> Get current user's submitted support tickets
+//@route  >>>> GET /api/contact/my
+//@Access >>>> Private (User)
+const getMyTickets = async (req, res) => {
+  try {
+    const userId = req.user ? req.user.id.toString() : null;
+    const userEmail = req.user ? req.user.email.toLowerCase().trim() : null;
+
+    const queries = [];
+    if (userId) queries.push({ userId });
+    if (userEmail) queries.push({ email: userEmail });
+
+    if (queries.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const myTickets = await Contact.find({ $or: queries }).sort({ createdAt: -1 });
+    return res.status(200).json(myTickets);
+  } catch (error) {
+    console.error("Get my tickets error:", error);
+    return res.status(500).send("Failed to retrieve your tickets.");
+  }
+};
+
 //@desc   >>>> Update ticket status & send resolution note to customer
 //@route  >>>> PUT /api/contact/:id
 //@Access >>>> Private (Admins only)
@@ -87,27 +119,35 @@ const updateTicketStatus = async (req, res) => {
     }
 
     if (status) ticket.status = status;
+    if (resolutionNote !== undefined) ticket.resolutionNote = resolutionNote.trim();
     await ticket.save();
 
-    // If linked to a customer, send notification to their portal safely
+    // Look up customer by userId OR email
+    let user = null;
     if (ticket.userId && mongoose.Types.ObjectId.isValid(ticket.userId)) {
+      user = await User.findById(ticket.userId);
+    }
+    if (!user && ticket.email) {
+      user = await User.findOne({ email: ticket.email.toLowerCase().trim() });
+    }
+
+    if (user) {
       try {
-        const user = await User.findById(ticket.userId);
-        if (user) {
-          const actionWord = status === "RESOLVED" ? "Resolved" : "Updated";
-          user.notifications.push({
-            type: "ticket-update",
-            title: `Support Ticket ${actionWord}`,
-            message: `[Ticket #${ticket.ticketId}] Status: ${status}. ${
-              resolutionNote ? `Admin Note: ${resolutionNote}` : "Your query has been updated by bank staff."
-            }`,
-            data: [{ ticket_id: ticket.ticketId }],
-          });
-          user.markModified("notifications");
-          await user.save();
-        }
+        const actionWord = status === "RESOLVED" ? "Resolved" : "Updated";
+        const noteText = resolutionNote && resolutionNote.trim() 
+          ? `Admin Note: ${resolutionNote.trim()}`
+          : "Your query has been updated and processed by bank staff.";
+
+        user.notifications.push({
+          type: "ticket-update",
+          title: `Support Ticket ${actionWord}`,
+          message: `[Ticket #${ticket.ticketId}] Status: ${status}. ${noteText}`,
+          data: [{ ticket_id: ticket.ticketId }],
+        });
+        user.markModified("notifications");
+        await user.save();
       } catch (notifErr) {
-        console.warn("Could not notify user on ticket update:", notifErr.message);
+        console.warn("Could not save resolution notification to user:", notifErr.message);
       }
     }
 
@@ -125,5 +165,6 @@ const updateTicketStatus = async (req, res) => {
 module.exports = {
   createContactTicket,
   getContactTickets,
+  getMyTickets,
   updateTicketStatus,
 };

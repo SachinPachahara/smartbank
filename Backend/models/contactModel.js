@@ -32,6 +32,10 @@ const contactSchema = new mongoose.Schema(
       enum: ["OPEN", "IN_PROGRESS", "RESOLVED"],
       default: "OPEN",
     },
+    resolutionNote: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,

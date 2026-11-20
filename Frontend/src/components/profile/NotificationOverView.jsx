@@ -1,27 +1,36 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import moment from "moment";
-import { notificationUpdate } from "../../state/features/User/UserData/userSlice";
+import {
+  notificationUpdate,
+  getUser,
+} from "../../state/features/User/UserData/userSlice";
 import { FcHighPriority, FcIdea, FcNoIdea, FcOk } from "react-icons/fc";
 import { PaginationNotificationsList } from "../helpers/PaginationNotificationsList";
 
 export const NotificationOverView = () => {
   const dispatch = useDispatch();
 
-  //Get Notifications from state
-  const notifications = useSelector(
-    (state) => state.userData.info.notifications
-  );
-
-  //Get user data
+  // Get user data
   const { user } = useSelector((state) => state.userAuth);
 
+  // Auto-refresh notifications from server on mount
+  useEffect(() => {
+    if (user?.token && user?.id) {
+      dispatch(getUser({ token: user.token, id: user.id }));
+    }
+  }, [dispatch, user]);
+
+  // Safe access to notifications from state
+  const notifications = useSelector(
+    (state) => state.userData.info?.notifications || []
+  );
+
   const handleClick = (notification) => {
-    //check if notification is already been seen
+    // Check if notification has already been seen
     if (notification.isSeen) return;
 
-    //if not seen then dispatch notification update
     const payload = {
       notificationId: notification._id,
       token: user.token,
@@ -31,26 +40,34 @@ export const NotificationOverView = () => {
   };
 
   const oneNotification = (notification) => {
+    const isTicket =
+      notification.type === "support-ticket" ||
+      notification.type === "ticket-update";
+
     return (
       <div
-        className={`max-w-xl mx-auto mt-2 px-4 sm:px-6 py-4  rounded-lg shadow w-full select-none
-hover:bg-blue-300 focus:bg-blue-300  active:bg-blue-300 
-  ${notification.isSeen && "bg-white"}
-  ${!notification.isSeen && "bg-gray-300"}
-`}
+        className={`max-w-xl mx-auto mt-2 px-4 sm:px-6 py-4 rounded-xl shadow w-full select-none transition ${
+          isTicket
+            ? notification.isSeen
+              ? "bg-teal-50 border border-teal-200"
+              : "bg-teal-100 border-2 border-teal-500 font-bold"
+            : notification.isSeen
+            ? "bg-white"
+            : "bg-slate-200 border-l-4 border-blue-800"
+        }`}
         key={notification._id}
       >
         <Link
           onClick={() => handleClick(notification)}
           to={`/notifications/${notification._id}`}
-          className=" inline-flex items-center justify-between w-full"
+          className="inline-flex items-center justify-between w-full"
         >
-          <div className="inline-flex items-center">
+          <div className="inline-flex items-center gap-2">
             <img
               src="https://cdn-icons-png.flaticon.com/512/893/893257.png"
               alt="Messages Icon"
-              className="w-6 h-6 mr-3"
-            ></img>
+              className="w-6 h-6 mr-1"
+            />
             <h3 className="font-bold text-base text-gray-800">
               {notification.title}
             </h3>
@@ -59,18 +76,19 @@ hover:bg-blue-300 focus:bg-blue-300  active:bg-blue-300
             {moment(notification.createdAt).fromNow()}
           </p>
         </Link>
-        <p className="flex mt-1 text-sm">
-          {!notification.isSeen && (
+        <p className="flex items-center mt-1.5 text-xs text-slate-600">
+          {!notification.isSeen ? (
             <>
-              <span>You have a new notification</span>
-              <FcHighPriority className="ml-1" size={20} />
+              <span className="font-semibold text-rose-600">
+                New unread notification
+              </span>
+              <FcHighPriority className="ml-1" size={18} />
             </>
-          )}
-
-          {notification.isSeen && (
-            <>
-              <FcOk className="ml-auto" size={20} />
-            </>
+          ) : (
+            <span className="flex items-center gap-1 text-slate-400 ml-auto text-[11px]">
+              <span>Read</span>
+              <FcOk size={16} />
+            </span>
           )}
         </p>
       </div>
@@ -81,24 +99,23 @@ hover:bg-blue-300 focus:bg-blue-300  active:bg-blue-300
     <div className="max-w-5xl w-full min-h-screen">
       <div className="h-full w-full">
         {/* Heading */}
-        <h3 className="flex justify-center items-center text-2xl text-center font-bold px-2 py-4 mb-10 bg-blue-200 border-b-4 border-blue-800 rounded shadow">
+        <h3 className="flex justify-center items-center text-2xl text-center font-bold px-2 py-4 mb-8 bg-blue-200 border-b-4 border-blue-800 rounded shadow">
           <FcIdea className="mr-1" size={50} />
           <span>Notifications</span>
         </h3>
 
-        {/* If there no notifications */}
-        {!notifications ||
-          (notifications.length === 0 && (
-            <div className="max-w-2xl w-full mx-auto my-4 flex flex-col gap-4 items-center justify-center flex-wrap  bg-pink-100 p-4 border-2 border-pink-800 rounded shadow">
-              <FcNoIdea size={60} />
-              <p className="text-gray-800 text-base font-semibold">
-                You do not have any Notifications!
-              </p>
-            </div>
-          ))}
+        {/* If there are no notifications */}
+        {notifications.length === 0 && (
+          <div className="max-w-2xl w-full mx-auto my-4 flex flex-col gap-4 items-center justify-center flex-wrap bg-pink-100 p-6 border-2 border-pink-800 rounded-xl shadow">
+            <FcNoIdea size={60} />
+            <p className="text-gray-800 text-base font-semibold">
+              You do not have any Notifications!
+            </p>
+          </div>
+        )}
 
         {/* Display All Notifications */}
-        {notifications && notifications.length > 0 && (
+        {notifications.length > 0 && (
           <PaginationNotificationsList
             oneNotification={oneNotification}
             notifications={notifications.slice(0).reverse()}
