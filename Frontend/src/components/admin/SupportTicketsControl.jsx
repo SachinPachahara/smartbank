@@ -8,7 +8,7 @@ import {
   MdSearch,
   MdMail,
   MdConfirmationNumber,
-  MdSend,
+  MdOutlineMarkEmailRead,
 } from "react-icons/md";
 import { BsShieldCheck, BsChatLeftDotsFill } from "react-icons/bs";
 import moment from "moment";
@@ -25,19 +25,22 @@ export const SupportTicketsControl = ({ tickets = [], onRefresh, token }) => {
     setUpdatingId(ticketId);
     setFeedbackMsg("");
     try {
-      await axios.put(
-        `${API_ENDPOINTS.CONTACT}${ticketId}`,
-        {
-          status: newStatus,
-          resolutionNote: note,
+      const payload = {
+        status: newStatus,
+      };
+      if (note && note.trim() !== "") {
+        payload.resolutionNote = note.trim();
+      } else if (newStatus === "RESOLVED") {
+        payload.resolutionNote =
+          "Thank you for reaching out! Your inquiry has been reviewed and resolved by SmartBank staff.";
+      }
+
+      await axios.put(`${API_ENDPOINTS.CONTACT}${ticketId}`, payload, {
+        headers: {
+          authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setFeedbackMsg(`Ticket successfully updated to ${newStatus}.`);
+      });
+      setFeedbackMsg(`Ticket successfully updated to ${newStatus}. Response sent to customer!`);
       setActiveReplyId(null);
       setReplyNote("");
       if (onRefresh) onRefresh();
@@ -60,7 +63,8 @@ export const SupportTicketsControl = ({ tickets = [], onRefresh, token }) => {
       t.ticketId?.toLowerCase().includes(q) ||
       t.name?.toLowerCase().includes(q) ||
       t.email?.toLowerCase().includes(q) ||
-      t.message?.toLowerCase().includes(q);
+      t.message?.toLowerCase().includes(q) ||
+      t.resolutionNote?.toLowerCase().includes(q);
     return matchesFilter && matchesSearch;
   });
 
@@ -213,23 +217,37 @@ export const SupportTicketsControl = ({ tickets = [], onRefresh, token }) => {
                   </div>
                 </div>
 
-                {/* Query Message */}
+                {/* Customer Query Message */}
                 <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200 whitespace-pre-wrap leading-relaxed">
+                  <span className="font-bold text-slate-900 block mb-1">Customer Query:</span>
                   {t.message}
                 </div>
+
+                {/* Current Response Note if already added */}
+                {t.resolutionNote && (
+                  <div className="text-xs bg-emerald-50 border border-emerald-300 p-3 rounded-xl text-emerald-900 space-y-1 animate-fadeIn">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <MdOutlineMarkEmailRead size={16} className="text-emerald-700" />
+                      <span>Bank Staff Response (Visible to User):</span>
+                    </div>
+                    <p className="text-xs text-emerald-800 whitespace-pre-wrap pl-6 font-medium">
+                      {t.resolutionNote}
+                    </p>
+                  </div>
+                )}
 
                 {/* Inline Reply / Resolution Note Box */}
                 {isReplying && (
                   <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2 animate-fadeIn">
                     <label className="block text-[11px] font-bold text-blue-900 uppercase tracking-wider">
-                      Resolution Note / Response to Customer (Sent to user notifications):
+                      Write Bank Response (Delivered directly to customer account & notifications):
                     </label>
                     <textarea
-                      rows={2}
+                      rows={3}
                       value={replyNote}
                       onChange={(e) => setReplyNote(e.target.value)}
-                      placeholder="e.g. Issue verified and resolved. Your account balance has been updated."
-                      className="w-full p-2 text-xs text-slate-800 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none resize-none"
+                      placeholder="e.g. We have investigated your account and resolved the issue. Your funds are secure."
+                      className="w-full p-2.5 text-xs text-slate-800 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none resize-none"
                     />
                     <div className="flex justify-end gap-2">
                       <button
@@ -262,7 +280,7 @@ export const SupportTicketsControl = ({ tickets = [], onRefresh, token }) => {
                   <div className="text-slate-400 text-[11px]">
                     {t.userId ? (
                       <span className="text-emerald-700 font-semibold">
-                        Registered Customer Account
+                        Registered Customer Account ({t.userId})
                       </span>
                     ) : (
                       <span>Guest Inquiry</span>
@@ -284,19 +302,19 @@ export const SupportTicketsControl = ({ tickets = [], onRefresh, token }) => {
                       </button>
                     )}
 
-                    {t.status !== "RESOLVED" ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveReplyId(isReplying ? null : t._id);
-                          setReplyNote("");
-                        }}
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1"
-                      >
-                        <MdCheckCircle size={14} />
-                        <span>Resolve Query</span>
-                      </button>
-                    ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveReplyId(isReplying ? null : t._id);
+                        setReplyNote(t.resolutionNote || "");
+                      }}
+                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1"
+                    >
+                      <MdCheckCircle size={14} />
+                      <span>{t.status === "RESOLVED" ? "Edit Response Note" : "Resolve & Reply"}</span>
+                    </button>
+
+                    {t.status === "RESOLVED" && (
                       <button
                         type="button"
                         disabled={updatingId === t._id}

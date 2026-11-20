@@ -2,6 +2,24 @@ const mongoose = require("mongoose");
 const Contact = require("../models/contactModel");
 const User = require("../models/userModel");
 
+// Helper to reliably find user by auto-increment ID or email
+const findUserForTicket = async (userId, email) => {
+  let user = null;
+  if (userId) {
+    const numId = Number(userId);
+    user = await User.findOne({
+      $or: [
+        { _id: userId },
+        ...(isNaN(numId) ? [] : [{ _id: numId }]),
+      ],
+    });
+  }
+  if (!user && email) {
+    user = await User.findOne({ email: email.toLowerCase().trim() });
+  }
+  return user;
+};
+
 //@desc   >>>> Create new support ticket / contact inquiry
 //@route  >>>> POST /api/contact
 //@Access >>>> Public / Authenticated
@@ -22,17 +40,8 @@ const createContactTicket = async (req, res) => {
     const ticketId = `TCK-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     // Clean userId and attempt user match by ID or Email
-    let matchedUser = null;
-    const safeUserId = userId && typeof userId === "string" && userId.trim() ? userId.trim() : null;
-
-    if (safeUserId && mongoose.Types.ObjectId.isValid(safeUserId)) {
-      matchedUser = await User.findById(safeUserId);
-    }
-    if (!matchedUser && cleanEmail) {
-      matchedUser = await User.findOne({ email: cleanEmail });
-    }
-
-    const finalUserId = matchedUser ? matchedUser._id.toString() : safeUserId;
+    const matchedUser = await findUserForTicket(userId, cleanEmail);
+    const finalUserId = matchedUser ? matchedUser._id.toString() : (userId ? String(userId).trim() : null);
 
     const newTicket = await Contact.create({
       ticketId,
@@ -41,6 +50,7 @@ const createContactTicket = async (req, res) => {
       message: message.trim(),
       userId: finalUserId,
       status: "OPEN",
+      resolutionNote: "",
     });
 
     // If matched to a customer, log an incoming notification
@@ -87,11 +97,11 @@ const getContactTickets = async (req, res) => {
 //@Access >>>> Private (User)
 const getMyTickets = async (req, res) => {
   try {
-    const userId = req.user ? req.user.id.toString() : null;
+    const userIdStr = req.user ? String(req.user.id || req.user._id).trim() : null;
     const userEmail = req.user ? req.user.email.toLowerCase().trim() : null;
 
     const queries = [];
-    if (userId) queries.push({ userId });
+    if (userIdStr) queries.push({ userId: userIdStr });
     if (userEmail) queries.push({ email: userEmail });
 
     if (queries.length === 0) {
@@ -119,29 +129,35 @@ const updateTicketStatus = async (req, res) => {
     }
 
     if (status) ticket.status = status;
-    if (resolutionNote !== undefined) ticket.resolutionNote = resolutionNote.trim();
+
+    const trimmedNote =
+      resolutionNote && typeof resolutionNote === "string"
+        ? resolutionNote.trim()
+        : "";
+
+    if (trimmedNote) {
+      ticket.resolutionNote = trimmedNote;
+    } else if (!ticket.resolutionNote && status === "RESOLVED") {
+      ticket.resolutionNote =
+        "Your inquiry has been reviewed and resolved by SmartBank staff.";
+    }
+
     await ticket.save();
 
     // Look up customer by userId OR email
-    let user = null;
-    if (ticket.userId && mongoose.Types.ObjectId.isValid(ticket.userId)) {
-      user = await User.findById(ticket.userId);
-    }
-    if (!user && ticket.email) {
-      user = await User.findOne({ email: ticket.email.toLowerCase().trim() });
-    }
+    const user = await findUserForTicket(ticket.userId, ticket.email);
 
     if (user) {
       try {
         const actionWord = status === "RESOLVED" ? "Resolved" : "Updated";
-        const noteText = resolutionNote && resolutionNote.trim() 
-          ? `Admin Note: ${resolutionNote.trim()}`
-          : "Your query has been updated and processed by bank staff.";
+        const noteText =
+          ticket.resolutionNote ||
+          "Your query has been updated and processed by bank staff.";
 
         user.notifications.push({
           type: "ticket-update",
           title: `Support Ticket ${actionWord}`,
-          message: `[Ticket #${ticket.ticketId}] Status: ${status}. ${noteText}`,
+          message: `[Ticket #${ticket.ticketId}] Status: ${ticket.status}. Admin Response: ${noteText}`,
           data: [{ ticket_id: ticket.ticketId }],
         });
         user.markModified("notifications");
@@ -153,7 +169,7 @@ const updateTicketStatus = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Ticket #${ticket.ticketId} updated to ${status}.`,
+      message: `Ticket #${ticket.ticketId} updated to ${ticket.status}.`,
       ticket,
     });
   } catch (error) {
