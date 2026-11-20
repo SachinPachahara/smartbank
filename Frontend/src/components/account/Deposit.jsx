@@ -18,7 +18,17 @@ export const Deposit = () => {
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Dynamic Gateway selections
+  const [selectedMethod, setSelectedMethod] = useState("upi");
   const [selectedBank, setSelectedBank] = useState("HDFC Bank");
+  const [upiId, setUpiId] = useState("user@okhdfcbank");
+  const [cardData, setCardData] = useState({
+    number: "4532 8921 4450 1289",
+    holder: "CARDHOLDER NAME",
+    expiry: "12/28",
+    cvv: "842",
+  });
 
   const { account, isError, isSuccess, isLoading, message } = useSelector(
     (state) => state.userAccount
@@ -36,14 +46,25 @@ export const Deposit = () => {
 
     if (isSuccess) {
       setIsModalOpen(false);
+
+      let channelName = "";
+      if (selectedMethod === "upi") {
+        channelName = `verified UPI (${upiId || "UPI Gateway"})`;
+      } else if (selectedMethod === "card") {
+        const last4 = (cardData.number || "1289").replace(/\s/g, "").slice(-4);
+        channelName = `verified Card (ending in ${last4})`;
+      } else {
+        channelName = `verified ${selectedBank} NetBanking gateway`;
+      }
+
       setMsg(
         `Success! You have deposited ${new Intl.NumberFormat("en-IN", {
           style: "currency",
           currency: "INR",
-        }).format(depositAmount)} via verified ${selectedBank} NetBanking gateway into your SmartBank account.`
+        }).format(depositAmount)} via ${channelName} into your SmartBank account.`
       );
     }
-  }, [isError, isSuccess, message, account, selectedBank, depositAmount]);
+  }, [isError, isSuccess, message, account, selectedMethod, selectedBank, upiId, cardData, depositAmount]);
 
   const handleOpenGateway = (e) => {
     e.preventDefault();
@@ -72,6 +93,27 @@ export const Deposit = () => {
     };
   });
 
+  // Dynamic button label based on selected channel
+  const getButtonText = () => {
+    const formatted = `₹${Number(depositAmount || 0).toLocaleString("en-IN")}`;
+    if (selectedMethod === "upi") {
+      return {
+        default: `Proceed to UPI Gateway & Authorize (${formatted})`,
+        loading: "Connecting to UPI Switch...",
+      };
+    }
+    if (selectedMethod === "card") {
+      return {
+        default: `Proceed to 3D Secure Card Gateway (${formatted})`,
+        loading: "Connecting to Card Network...",
+      };
+    }
+    return {
+      default: `Proceed to ${selectedBank} Gateway (${formatted})`,
+      loading: `Connecting to ${selectedBank}...`,
+    };
+  };
+
   return (
     <div className="max-w-4xl w-full mx-auto pb-12">
       {/* Header Banner */}
@@ -83,7 +125,7 @@ export const Deposit = () => {
           <div>
             <h2 className="text-2xl font-bold">Add Funds to SmartBank</h2>
             <p className="text-xs text-teal-200 mt-0.5">
-              Instant Atomic Credit • Official NetBanking & Gateway Portal
+              Instant Atomic Credit • Multi-Channel Payment Gateway Sandbox
             </p>
           </div>
         </div>
@@ -146,15 +188,25 @@ export const Deposit = () => {
                 required
               />
               <p className="text-[11px] text-slate-500 mt-1">
-                Authorizes connection to the selected bank gateway.
+                Authorizes connection to the selected payment gateway.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Realistic Payment Gateway Options */}
+        {/* Dynamic & Controlled Payment Gateway Options */}
         <PaymentMethods
           title="Select Payment Channel (Cards / UPI / NetBanking)"
+          selectedMethod={selectedMethod}
+          onMethodChange={setSelectedMethod}
+          selectedBank={selectedBank}
+          onBankChange={setSelectedBank}
+          upiId={upiId}
+          onUpiIdChange={setUpiId}
+          cardData={cardData}
+          onCardDataChange={(field, val) =>
+            setCardData((prev) => ({ ...prev, [field]: val }))
+          }
         />
 
         {/* Alert Messages */}
@@ -169,23 +221,23 @@ export const Deposit = () => {
         {/* Submit Button */}
         <div className="pt-2">
           <FormButton
-            text={{
-              default: `Proceed to Gateway & Enter Credentials (₹${Number(depositAmount || 0).toLocaleString("en-IN")})`,
-              loading: "Connecting to Bank Gateway...",
-            }}
+            text={getButtonText()}
             isLoading={isLoading}
             icon={<HiReceiptRefund className="ml-1" size={22} />}
           />
         </div>
       </form>
 
-      {/* NetBanking & Gateway Credential Verification Modal */}
+      {/* Multi-Channel Credential Verification Gateway Modal */}
       <NetBankingModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAuthorize={handleAuthorizeDeposit}
         amount={depositAmount}
+        method={selectedMethod}
         bankName={selectedBank}
+        upiId={upiId}
+        cardData={cardData}
         isLoading={isLoading}
       />
     </div>
