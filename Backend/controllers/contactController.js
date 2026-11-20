@@ -68,7 +68,54 @@ const getContactTickets = async (req, res) => {
   }
 };
 
+//@desc   >>>> Update ticket status & send resolution note to customer
+//@route  >>>> PUT /api/contact/:id
+//@Access >>>> Private (Admins only)
+const updateTicketStatus = async (req, res) => {
+  try {
+    const { status, resolutionNote } = req.body;
+    const ticket = await Contact.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).send("Ticket not found.");
+    }
+
+    if (status) ticket.status = status;
+    await ticket.save();
+
+    // If linked to a customer, send notification to their portal
+    if (ticket.userId) {
+      try {
+        const user = await User.findById(ticket.userId);
+        if (user) {
+          const actionWord = status === "RESOLVED" ? "Resolved" : "Updated";
+          user.notifications.push({
+            type: "ticket-update",
+            title: `Support Ticket ${actionWord}`,
+            message: `[Ticket #${ticket.ticketId}] Status: ${status}. ${
+              resolutionNote ? `Admin Note: ${resolutionNote}` : "Your query has been updated by bank staff."
+            }`,
+            data: [{ ticket_id: ticket.ticketId }],
+          });
+          user.markModified("notifications");
+          await user.save();
+        }
+      } catch (_) {}
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Ticket #${ticket.ticketId} updated to ${status}.`,
+      ticket,
+    });
+  } catch (error) {
+    console.error("Update ticket error:", error);
+    return res.status(500).send("Failed to update ticket.");
+  }
+};
+
 module.exports = {
   createContactTicket,
   getContactTickets,
+  updateTicketStatus,
 };

@@ -4,6 +4,7 @@ import {
   FcConferenceCall,
   FcNews,
   FcVoicePresentation,
+  FcCustomerSupport,
 } from "react-icons/fc";
 import { useSelector } from "react-redux";
 
@@ -18,6 +19,7 @@ export const DashboardNavbar = ({ activeTab, setActiveTab }) => {
       stateName: "adminsList",
       tabName: "Admins Control Panel",
       icon: FcVoicePresentation,
+      ownerOnly: true,
     },
     {
       stateName: "usersRequests",
@@ -25,9 +27,15 @@ export const DashboardNavbar = ({ activeTab, setActiveTab }) => {
       icon: FcNews,
     },
     {
+      stateName: "supportTickets",
+      tabName: "Support Inquiries",
+      icon: FcCustomerSupport,
+    },
+    {
       stateName: "addAdmin",
       tabName: "Add New Admins",
       icon: FcBusinessman,
+      ownerOnly: true,
     },
   ];
 
@@ -40,16 +48,12 @@ export const DashboardNavbar = ({ activeTab, setActiveTab }) => {
           {navTabs.map((tab, index) => (
             <li
               key={index}
-              className={`flex justify-center items-center select-none cursor-pointer  hover:text-blue-700 hover:underline ${
+              className={`flex justify-center items-center select-none cursor-pointer hover:text-blue-700 hover:underline ${
                 activeTab === tab.stateName
                   ? " font-bold underline underline-offset-2"
                   : " font-semibold"
               }
-              ${
-                info.role !== "owner" &&
-                (index === 1 || index === 3) &&
-                "hidden"
-              }`}
+              ${info?.role !== "owner" && tab.ownerOnly ? "hidden" : ""}`}
               onClick={() => setActiveTab(tab.stateName)}
             >
               <tab.icon className="mr-1" size={25} />
