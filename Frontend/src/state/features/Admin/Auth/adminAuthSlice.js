@@ -7,6 +7,7 @@ const initialState = {
   isError: false,
   isSuccess: false,
   message: "",
+  sessionExpired: false,
 };
 
 //Login
@@ -65,6 +66,7 @@ export const adminAuthSlice = createSlice({
       state.isError = false;
       state.isSuccess = false;
       state.message = "";
+      state.sessionExpired = false;
     },
   },
   extraReducers: (builder) => {
@@ -74,6 +76,7 @@ export const adminAuthSlice = createSlice({
         state.isError = false;
         state.isSuccess = false;
         state.message = "";
+        state.sessionExpired = false;
       })
       .addCase(adminLogin.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -81,6 +84,7 @@ export const adminAuthSlice = createSlice({
         state.isError = false;
         state.message = "";
         state.info = action.payload;
+        state.sessionExpired = false;
       })
       .addCase(adminLogin.rejected, (state, action) => {
         state.isLoading = false;
@@ -88,9 +92,11 @@ export const adminAuthSlice = createSlice({
         state.message = action.payload;
         state.isSuccess = false;
         state.info = null;
+        state.sessionExpired = false;
       })
       .addCase(adminLogout.fulfilled, (state) => {
         state.info = null;
+        state.sessionExpired = false;
       })
       .addCase(getAdmin.pending, (state) => {
         state.isLoading = true;
@@ -103,6 +109,7 @@ export const adminAuthSlice = createSlice({
         state.isSuccess = true;
         state.isError = false;
         state.message = "";
+        state.sessionExpired = false;
         state.info = {
           ...state.info,
           email: action.payload.email,
@@ -115,18 +122,21 @@ export const adminAuthSlice = createSlice({
         state.message = action.payload;
         state.isSuccess = false;
         state.info = null;
+        state.sessionExpired = true;
       })
       .addCase(updateAdmin.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
         state.isSuccess = false;
         state.message = "";
+        state.sessionExpired = false;
       })
       .addCase(updateAdmin.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
         state.isError = false;
         state.message = "Your Profile Has Been Updated Successfully!";
+        state.sessionExpired = false;
         state.info = {
           ...state.info,
           email: action.payload.email,
@@ -137,6 +147,7 @@ export const adminAuthSlice = createSlice({
         state.isError = true;
         state.message = action.payload;
         state.isSuccess = false;
+        state.sessionExpired = false;
       });
   },
 });

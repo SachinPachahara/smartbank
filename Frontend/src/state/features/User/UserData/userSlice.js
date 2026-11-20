@@ -7,6 +7,7 @@ const initialState = {
   isError: false,
   isSuccess: false,
   message: "",
+  sessionExpired: false,
 };
 
 //Get User
@@ -79,6 +80,7 @@ export const userSlice = createSlice({
       state.isError = false;
       state.isSuccess = false;
       state.message = "";
+      state.sessionExpired = false;
     },
   },
   extraReducers: (builder) => {
@@ -95,6 +97,7 @@ export const userSlice = createSlice({
         state.isSuccess = true;
         state.message = "";
         state.info = action.payload;
+        state.sessionExpired = false;
       })
       .addCase(getUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -102,12 +105,15 @@ export const userSlice = createSlice({
         state.isSuccess = false;
         state.message = action.payload;
         state.info = null;
+        // Profile fetch failed -> invalid token / dead session
+        state.sessionExpired = true;
       })
       .addCase(updateUser.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
         state.isSuccess = false;
         state.message = "";
+        state.sessionExpired = false;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -115,18 +121,21 @@ export const userSlice = createSlice({
         state.isSuccess = true;
         state.message = "Your Profile Has Been Updated Successfully!";
         state.info = action.payload;
+        state.sessionExpired = false;
       })
       .addCase(updateUser.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.isSuccess = false;
         state.message = action.payload;
+        state.sessionExpired = false;
       })
       .addCase(accountRequest.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
         state.isSuccess = false;
         state.message = "";
+        state.sessionExpired = false;
       })
       .addCase(accountRequest.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -134,18 +143,22 @@ export const userSlice = createSlice({
         state.isSuccess = true;
         state.message = "";
         state.info = action.payload;
+        state.sessionExpired = false;
       })
       .addCase(accountRequest.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.isSuccess = false;
         state.message = action.payload;
+        // In-page form error (e.g. wrong password), NOT a session expiration
+        state.sessionExpired = false;
       })
       .addCase(notificationUpdate.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
         state.isSuccess = false;
         state.message = "";
+        state.sessionExpired = false;
       })
       .addCase(notificationUpdate.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -153,15 +166,18 @@ export const userSlice = createSlice({
         state.isSuccess = true;
         state.message = "";
         state.info = action.payload;
+        state.sessionExpired = false;
       })
       .addCase(notificationUpdate.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.isSuccess = false;
         state.message = action.payload;
+        state.sessionExpired = false;
       })
       .addCase(userLogout.fulfilled, (state) => {
         state.info = null;
+        state.sessionExpired = false;
       });
   },
 });

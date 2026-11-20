@@ -6,7 +6,7 @@ import { clearAuthSession } from "../../store/store";
 
 export default function UseDetectUser() {
   const { user } = useSelector((state) => state.userAuth);
-  const { isError } = useSelector((state) => state.userData);
+  const { sessionExpired } = useSelector((state) => state.userData);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -21,13 +21,12 @@ export default function UseDetectUser() {
   }, [user]);
 
   useEffect(() => {
-    if (user && isError) {
+    if (user && sessionExpired) {
       clearAuthSession();
       dispatch(logout());
       dispatch(userLogout());
     }
-  }, [user, isError]);
+  }, [user, sessionExpired]);
 
   return user;
 }
-

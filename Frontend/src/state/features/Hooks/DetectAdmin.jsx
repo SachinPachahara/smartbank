@@ -4,7 +4,7 @@ import { adminLogout, getAdmin } from "../Admin/Auth/adminAuthSlice";
 import { clearAuthSession } from "../../store/store";
 
 export default function UseDetectAdmin() {
-  const { info, isError } = useSelector((state) => state.adminAuth);
+  const { info, sessionExpired } = useSelector((state) => state.adminAuth);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -19,12 +19,11 @@ export default function UseDetectAdmin() {
   }, []);
 
   useEffect(() => {
-    if (info && isError) {
+    if (info && sessionExpired) {
       clearAuthSession();
       dispatch(adminLogout());
     }
-  }, [info, isError]);
+  }, [info, sessionExpired]);
 
   return info;
 }
-
