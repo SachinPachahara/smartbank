@@ -59,6 +59,11 @@ shadow transition-all ease-in-out duration-300"
           "bg-green-200"
         }
         ${notification.type === "declined" && "bg-red-200"}
+        ${
+          (notification.type === "support-ticket" ||
+            notification.type === "ticket-update") &&
+          "bg-teal-100"
+        }
           px-3 sm:px-6 py-3 sm:py-6 rounded-lg shadow w-full 
         `}
       >
@@ -158,6 +163,18 @@ shadow transition-all ease-in-out duration-300"
             </p>
           </>
         )}
+
+        {/*Case:- Support Ticket Notification*/}
+        {notification.data &&
+          (notification.type === "support-ticket" ||
+            notification.type === "ticket-update") && (
+            <p className="mt-1 text-sm font-semibold">
+              Ticket Reference ID:-
+              <span className="underline underline-offset-2 text-teal-900 font-mono ml-1">
+                {notification.data[0]?.ticket_id}
+              </span>
+            </p>
+          )}
       </div>
     </div>
   );

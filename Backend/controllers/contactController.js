@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Contact = require("../models/contactModel");
 const User = require("../models/userModel");
 
@@ -13,36 +14,41 @@ const createContactTicket = async (req, res) => {
     }
 
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(email.trim())) {
       return res.status(400).send("Please provide a valid email address.");
     }
 
     const ticketId = `TCK-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
+    // Clean valid string or null for userId
+    const safeUserId = userId && typeof userId === "string" && userId.trim() ? userId.trim() : null;
+
     const newTicket = await Contact.create({
       ticketId,
-      name,
-      email,
-      message,
-      userId: userId || null,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      message: message.trim(),
+      userId: safeUserId,
       status: "OPEN",
     });
 
-    // If userId exists, add a notification to the user's account
-    if (userId) {
+    // Attempt to add notification if user exists, but NEVER fail the ticket creation if notification fails
+    if (safeUserId && mongoose.Types.ObjectId.isValid(safeUserId)) {
       try {
-        const user = await User.findById(userId);
+        const user = await User.findById(safeUserId);
         if (user) {
           user.notifications.push({
             type: "support-ticket",
             title: "Support Ticket Created",
-            message: `Your support request has been logged under Ticket #${ticketId}. Our banking helpdesk will respond shortly.`,
+            message: `Your inquiry has been logged under Ticket #${ticketId}. Our banking helpdesk will review it shortly.`,
             data: [{ ticket_id: ticketId }],
           });
           user.markModified("notifications");
           await user.save();
         }
-      } catch (_) {}
+      } catch (notifErr) {
+        console.warn("Could not save notification to user document:", notifErr.message);
+      }
     }
 
     return res.status(201).json({
@@ -51,8 +57,8 @@ const createContactTicket = async (req, res) => {
       ticketId,
     });
   } catch (error) {
-    console.error("Contact error:", error);
-    return res.status(500).send("Ooops!! Something went wrong while submitting your message.");
+    console.error("Contact error details:", error);
+    return res.status(500).send(`Ooops!! Something went wrong: ${error.message}`);
   }
 };
 
@@ -83,8 +89,8 @@ const updateTicketStatus = async (req, res) => {
     if (status) ticket.status = status;
     await ticket.save();
 
-    // If linked to a customer, send notification to their portal
-    if (ticket.userId) {
+    // If linked to a customer, send notification to their portal safely
+    if (ticket.userId && mongoose.Types.ObjectId.isValid(ticket.userId)) {
       try {
         const user = await User.findById(ticket.userId);
         if (user) {
@@ -100,7 +106,9 @@ const updateTicketStatus = async (req, res) => {
           user.markModified("notifications");
           await user.save();
         }
-      } catch (_) {}
+      } catch (notifErr) {
+        console.warn("Could not notify user on ticket update:", notifErr.message);
+      }
     }
 
     return res.status(200).json({
