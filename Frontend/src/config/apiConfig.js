@@ -39,6 +39,7 @@ export const API_ENDPOINTS = {
   ADMINS: `${API_BASE_URL}/admins/`,
   ACCOUNT: `${API_BASE_URL}/account/`,
   REQUEST: `${API_BASE_URL}/request/`,
+  CONTACT: `${API_BASE_URL}/contact/`,
 };
 
 export default API_ENDPOINTS;

@@ -52,6 +52,10 @@ app.use("/api/account", accountRoute);
 const accountRequestRoute = require("./routes/accountRequestRoutes");
 app.use("/api/request", accountRequestRoute);
 
+//contact Router
+const contactRoute = require("./routes/contactRoutes");
+app.use("/api/contact", contactRoute);
+
 // Health check endpoint for Render and uptime monitoring
 app.get("/api/health", (req, res) => {
   res.status(200).json({
